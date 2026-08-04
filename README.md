@@ -185,3 +185,10 @@ python3 -m http.server 8000
 - 若要做百万级全球站点：走 D（PMTiles + 分片对象存储），仍保持「后台预计算、按需加载」。
 - 若「好走度」想重新纳入某维度：改 `render_static.py` 的 `W` 权重即可，无需重跑管线；若需真实步行距离维度，改 `build_station.py` 重算 `beijing.json`。
 - 若需要 POI 但只想静态展示：在 `render_static.py` 中加回 POI 图层（当前刻意省略）。
+
+### 11.6 当前后台批处理（自主执行）
+- 目标：对我们「指定的一组火车站区域」逐一用真实数据算出「友好区域」，逐步渲染零依赖静态图并上传展示。
+- 指定区域：`build_station.STATIONS`（以北京南站为锚，扩展到 16 个主要高铁站：上海虹桥/广州南/深圳北/成都东/武汉/西安北/南京南/杭州东/郑州东/东京/首尔/巴黎北/国王十字/柏林中央/纽约宾州/莫斯科）。
+- 友好区域定义：无 POI 重加权好走度 ≥ 65 的相邻格子，连通聚类成片；输出外轮廓 `edges` 与格数，静态图以绿色粗线勾边 + 「友好区·N格」标注。
+- 管线：`build_station.compute_station(id)`（含聚类）→ `render_static.render(id)`（写 svg/html）→ `batch_stations.py` 遍历上传（Contents API）+ 重建 `stations/static/index.html` 画廊页。支持断点续跑、Overpass 多端点容错重试、站间慢速暂停、失败跳过。
+- 前台有限展示：画廊页 https://wadesha.github.io/walkable-map/stations/static/ （列出各站静态图链接 + 友好区域统计），后台持续补充。
