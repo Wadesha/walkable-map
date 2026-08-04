@@ -199,3 +199,14 @@ python3 -m http.server 8000
 - 实现：`build_station.py` 的 Overpass 查询新增 `way["building"]`（及 `leisure=park/garden` 绿地），存为 `buildings`/`greens` FeatureCollection；`render_static.py` 在最底层画绿地（浅绿）→ 建筑块（浅灰）→ 2km 研究圈（虚线），其上叠街区好走度半透明底色（透明度 0.30 透出肌理）+ 街道好走度着色 + 友好区轮廓。
 - 仍满足：零运行时依赖、无 MapLibre、无在线瓦片、无 JS、无 POI；只是图片本身更"像真地方"。
 - 代价：SVG 体积变大（北京 475KB→972KB，主要因建筑多边形）；对超密城市（东京/伦敦）建筑数可达数万，需注意体积。
+
+### 11.8 总览导航页 + 站名标注（2026-08-04 晚）
+- 用户两点诉求：(1) 详细图是否可加少量地名文字（确认可行）；(2) 先做一个「大地图动态化粗粒度网格」总览，点城市进入相应精细内容。
+- 站名标注：`render_static.py` 在车站坐标处加 ★ + 站名（`data["name"]`），纯矢量文字、零依赖。路名/片区名可再加（需管线抓取 OSM `name` 字段，待用户确认范围）。
+- 总览页 `stations/overview.html`（**零依赖**：无 MapLibre / 无在线瓦片 / 无 JS 地图库，仅原生 SVG + fetch `cities.json`）：
+  - 等距投影世界网格（经纬网 + 赤道/本初子午线强调）作粗粒度底；
+  - 17 城按「均值好走度」红→黄→绿着色，可点标记 + 右侧城市列表，点城市 → `window.open("static/<id>.html")` 进入该城静态精细图；
+  - 未算完城市显示灰色"待计算"，点击提示计算中。
+- 数据驱动：`gen_cities.py` 扫 `data/*.json` 产出 `stations/cities.json`（每城 score/friendly/hasDetail），始终含全部 17 城；后台每算完一站可重跑刷新。
+- 入口：https://wadesha.github.io/walkable-map/stations/overview.html （画廊页 https://wadesha.github.io/walkable-map/stations/static/ 仍保留，作逐站列表）。
+- 现状：cities.json 初版 12 城已算分+有精细图，5 城（莫斯科/柏林/巴黎/纽约/伦敦）由后台批处理 `gntyc8` 计算中。
