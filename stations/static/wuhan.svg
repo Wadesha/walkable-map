@@ -1317,11 +1317,9 @@
 <text x="461.4" y="197.2">三环线</text>
 <text x="479.7" y="271.8">三环线</text>
 <text x="637.0" y="446.5">青化路</text>
-<text x="456.4" y="271.4">▴武汉站东广场</text>
-<text x="436.3" y="260.8">▴武汉火车站</text>
-<text x="433.4" y="260.7">▴Wuhan train station</text>
 <text x="434.4" y="258.3">▴武汉</text>
-<text x="454.8" y="237.9">▴武汉火车站</text>
+<text x="433.4" y="260.7">▴Wuhan train station</text>
+<text x="456.4" y="271.4">▴武汉站东广场</text>
 </g>
 <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="rgb(215,48,39)"/><stop offset="25%" stop-color="rgb(234,136,89)"/><stop offset="50%" stop-color="rgb(254,224,139)"/><stop offset="75%" stop-color="rgb(140,188,110)"/><stop offset="100%" stop-color="rgb(26,152,80)"/></linearGradient></defs>
 <rect x="440.0" y="1164" width="320" height="16" fill="url(#g)" stroke="#d1d5db" stroke-width="1"/>
