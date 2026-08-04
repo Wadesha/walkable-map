@@ -198,6 +198,15 @@ def render(sid):
                        f'fill="#1a6b3a" stroke="#ffffff" stroke-width="3" paint-order="stroke">步行友好</text>')
     out.append('</g>')
 
+    # 站名标注（地名文字）：在车站坐标处画 ★ + 站名
+    sx, sy = P(*to_m(lng0, lat0))
+    out.append('<g>')
+    out.append(f'<circle cx="{sx:.1f}" cy="{sy:.1f}" r="5.5" fill="#111827" stroke="#ffffff" stroke-width="2"/>')
+    out.append(f'<text x="{sx+9:.1f}" y="{sy+4:.1f}" font-size="14" font-weight="700" '
+               f'fill="#111827" stroke="#ffffff" stroke-width="3.4" paint-order="stroke">'
+               f'★ {data["name"]}</text>')
+    out.append('</g>')
+
     # 图例
     lg_x, lg_y, lg_w, lg_h = (Wpx - 320) / 2, Hpx - 96, 320, 16
     stops = [0, 25, 50, 75, 100]
