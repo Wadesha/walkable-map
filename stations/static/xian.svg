@@ -1529,11 +1529,8 @@
 <text x="985.0" y="635.4">北三环路</text>
 <text x="778.4" y="649.7">北三环路</text>
 <text x="693.2" y="576.9">文景路</text>
-<text x="694.3" y="505.4">▴西安北站北广场</text>
 <text x="686.0" y="514.3">▴售票处3</text>
-<text x="692.7" y="528.3">▴麦当劳</text>
-<text x="694.6" y="531.6">▴西安北</text>
-<text x="717.1" y="468.9">▴文景山公园</text>
+<text x="694.3" y="505.4">▴西安北站北广场</text>
 </g>
 <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="rgb(215,48,39)"/><stop offset="25%" stop-color="rgb(234,136,89)"/><stop offset="50%" stop-color="rgb(254,224,139)"/><stop offset="75%" stop-color="rgb(140,188,110)"/><stop offset="100%" stop-color="rgb(26,152,80)"/></linearGradient></defs>
 <rect x="440.0" y="1164" width="320" height="16" fill="url(#g)" stroke="#d1d5db" stroke-width="1"/>
