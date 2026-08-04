@@ -131,7 +131,17 @@ python3 -m http.server 8000
 
 ---
 
+## 9.1 子站：火车站 2km 步行友好专题（`stations/`）
+
+对「有火车站的城市」逐一做站周 2km 步行友好专题，演示「静态预计算、按需加载」架构。
+
+- 在线：https://wadesha.github.io/walkable-map/stations/
+- 14 个真实坐标演示站（各大洲）；其中**北京南站已接入真实数据**。
+- 真实数据管线 `stations/build_station.py`（纯 Python 标准库，无需安装依赖）：Overpass 拉 OSM 路网 + POI，Open-Meteo 拉 DEM 算坡度，构建步行图后用 Dijkstra 计算到各类 POI 的真实步行距离；输出 `stations/data/<id>.json`。
+- 子站优先 `fetch('data/<id>.json')` 加载真实/预计算数据，缺失则回退模拟——因此总站点数不影响单次访问内存。
+- 生产级扩展：百万级站点改用 PMTiles / 矢量瓦片 + 分片对象存储，网页只加载瓦片即可秒开。
+
 ## 10. 说明
 
-本仓库为**原型 / 演示**用途，所有步行友好数据均为程序模拟，请勿用于任何真实决策。
+本仓库为**原型 / 演示**用途，步行友好数据除已标注的「北京南站真实数据」外均为程序模拟，请勿用于任何真实决策。
 底图版权归 OpenStreetMap 与 CARTO 所有。
