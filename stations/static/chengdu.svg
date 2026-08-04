@@ -3590,11 +3590,9 @@
 <text x="625.3" y="613.1">东三环路五段</text>
 <text x="603.0" y="801.1">驿都大道</text>
 <text x="736.7" y="342.5">东三环路四段</text>
-<text x="563.2" y="524.0">▴成都东</text>
-<text x="550.2" y="521.2">▴汉堡王</text>
-<text x="570.6" y="535.8">▴Dairy Queen</text>
-<text x="539.8" y="516.8">▴成都东客站</text>
-<text x="541.1" y="490.9">▴鹏瑞利小吃(鹏瑞利东站广场店)</text>
+<text x="533.7" y="381.9">▴迎晖路</text>
+<text x="558.0" y="376.8">▴集福饺子馆</text>
+<text x="557.9" y="380.9">▴吉吉吉他工作室</text>
 </g>
 <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="rgb(215,48,39)"/><stop offset="25%" stop-color="rgb(234,136,89)"/><stop offset="50%" stop-color="rgb(254,224,139)"/><stop offset="75%" stop-color="rgb(140,188,110)"/><stop offset="100%" stop-color="rgb(26,152,80)"/></linearGradient></defs>
 <rect x="440.0" y="1164" width="320" height="16" fill="url(#g)" stroke="#d1d5db" stroke-width="1"/>
