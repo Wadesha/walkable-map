@@ -1600,11 +1600,9 @@
 <text x="756.7" y="502.6">石都北路</text>
 <text x="726.3" y="516.2">双涌路</text>
 <text x="948.6" y="680.0">钟盛路</text>
-<text x="620.6" y="455.3">▴72街</text>
-<text x="620.4" y="456.6">▴全家</text>
-<text x="611.3" y="450.6">▴肯德基</text>
-<text x="607.0" y="452.6">▴麦当劳</text>
-<text x="648.3" y="429.7">▴广州南站东广场网约车即停即走上客区</text>
+<text x="670.3" y="432.8">▴番禺</text>
+<text x="629.9" y="564.7">▴南站B公园</text>
+<text x="684.9" y="527.8">▴南站A公园</text>
 </g>
 <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="rgb(215,48,39)"/><stop offset="25%" stop-color="rgb(234,136,89)"/><stop offset="50%" stop-color="rgb(254,224,139)"/><stop offset="75%" stop-color="rgb(140,188,110)"/><stop offset="100%" stop-color="rgb(26,152,80)"/></linearGradient></defs>
 <rect x="440.0" y="1164" width="320" height="16" fill="url(#g)" stroke="#d1d5db" stroke-width="1"/>
