@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>火车站步行好走度 · 世界总览（方案 C 入口）</title>
+<style>
+  :root{--bg:#eef2f5;--panel:#fff;--ink:#111827;--mut:#6b7280;--line:#d1d5db}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+  header{padding:18px 22px 10px;border-bottom:1px solid var(--line);background:var(--panel)}
+  h1{margin:0;font-size:20px}
+  .sub{color:var(--mut);font-size:13px;margin-top:4px}
+  .wrap{display:flex;gap:16px;padding:16px;align-items:flex-start;flex-wrap:wrap}
+  .mapbox{flex:1 1 640px;min-width:320px;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  svg{display:block;width:100%;height:auto}
+  .side{flex:1 1 280px;min-width:260px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;max-height:78vh;overflow:auto}
+  .side h2{font-size:14px;margin:6px 4px 10px;color:var(--mut)}
+  .row{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:8px;cursor:pointer}
+  .row:hover{background:#f1f5f9}
+  .row.pending{opacity:.55;cursor:default}
+  .sw{width:14px;height:14px;border-radius:50%;flex:0 0 auto;border:1px solid rgba(0,0,0,.15)}
+  .nm{font-size:13.5px;font-weight:600}
+  .meta{font-size:11.5px;color:var(--mut);margin-left:auto}
+  .legend{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mut);margin-top:8px;padding:0 4px}
+  .bar{height:12px;width:160px;border-radius:3px;background:linear-gradient(90deg,#d73027,#fee08b,#1a9850);border:1px solid var(--line)}
+  .mk{cursor:pointer}
+  .mk text{pointer-events:none;font-size:11px;font-weight:600;paint-order:stroke;stroke:#fff;stroke-width:3px}
+  footer{padding:10px 22px 22px;color:var(--mut);font-size:12px}
+  a{color:#0f7a3d}
+</style>
+</head>
+<body>
+<header>
+  <h1>火车站站周 2km 步行好走度 · 世界总览</h1>
+  <div class="sub">粗粒度索引：每城按「均值好走度」着色，点城市进入该城静态精细图（零依赖 SVG）。本页无 MapLibre / 无在线瓦片 / 无 JS 地图库。</div>
+</header>
+<div class="wrap">
+  <div class="mapbox">
+    <svg id="map" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet" role="img" aria-label="世界城市步行好走度总览">
+      <rect x="0" y="0" width="1000" height="500" fill="#dceaf2"/>
+      <g id="grid"></g>
+      <g id="marks"></g>
+    </svg>
+    <div class="legend"><span>差</span><div class="bar"></div><span>优</span><span style="margin-left:auto">灰色=待计算</span></div>
+  </div>
+  <div class="side">
+    <h2>城市列表（按国家/地区）</h2>
+    <div id="list"></div>
+  </div>
+</div>
+<footer>
+  数据：OSM Overpass（路网/建筑/绿地）+ Open-Meteo 高程，后台离线预计算。总览由 <a href="cities.json">cities.json</a> 驱动。
+  后台持续补充未完成的城市。
+</footer>
+<script>
+const W=1000,H=500;
+const x=lng=>(lng+180)/360*W;
+const y=lat=>(90-lat)/180*H;
+function color(v){
+  if(v===null||v===undefined) return "#cbd5e1";
+  v=Math.max(0,Math.min(100,v));
+  const stops=[[0,[215,48,39]],[50,[254,224,139]],[100,[26,152,80]]];
+  for(let i=0;i<stops.length-1;i++){
+    const[a,ca]=stops[i],[b,cb]=stops[i+1];
+    if(a<=v&&v<=b){const t=(v-a)/(b-a);
+      const r=Math.round(ca[0]+(cb[0]-ca[0])*t),g=Math.round(ca[1]+(cb[1]-ca[1])*t),bl=Math.round(ca[2]+(cb[2]-ca[2])*t);
+      return `rgb(${r},${g},${bl})`;}
+  }
+  return "rgb(26,152,80)";
+}
+// 经纬网格
+const grid=document.getElementById("grid");
+for(let lng=-180;lng<=180;lng+=30){
+  const xx=x(lng);
+  const emph=lng===0;
+  grid.insertAdjacentHTML("beforeend",
+    `<line x1="${xx}" y1="0" x2="${xx}" y2="${H}" stroke="${emph?'#9fb4c4':'#c4d6e2'}" stroke-width="${emph?1:0.5}"/>`);
+}
+for(let lat=-90;lat<=90;lat+=30){
+  const yy=y(lat);
+  const emph=lat===0;
+  grid.insertAdjacentHTML("beforeend",
+    `<line x1="0" y1="${yy}" x2="${W}" y2="${yy}" stroke="${emph?'#9fb4c4':'#c4d6e2'}" stroke-width="${emph?1:0.5}"/>`);
+}
+const marks=document.getElementById("marks");
+const list=document.getElementById("list");
+
+function openDetail(c){
+  if(c.hasDetail) window.open(`static/${c.id}.html`,"_blank");
+  else alert(`${c.city}·${c.name} 正在后台计算中，暂无可看精细图。`);
+}
+
+function render(C){
+  const cities=C.cities;
+  // 标记
+  for(const c of cities){
+    const cx=x(c.lng), cy=y(c.lat);
+    const col=color(c.score);
+    const r=c.hasDetail?7:5;
+    const g=document.createElementNS("http://www.w3.org/2000/svg","g");
+    g.setAttribute("class","mk");
+    g.setAttribute("transform",`translate(${cx},${cy})`);
+    const ring=document.createElementNS("http://www.w3.org/2000/svg","circle");
+    ring.setAttribute("r",r+3);ring.setAttribute("fill","#fff");ring.setAttribute("fill-opacity","0.7");
+    const dot=document.createElementNS("http://www.w3.org/2000/svg","circle");
+    dot.setAttribute("r",r);dot.setAttribute("fill",col);dot.setAttribute("stroke","#111827");dot.setAttribute("stroke-width","1");
+    const t=document.createElementNS("http://www.w3.org/2000/svg","text");
+    const left = cx>W-120;
+    t.setAttribute("x", left? -(r+6): (r+6));
+    t.setAttribute("y", 4);
+    t.setAttribute("text-anchor", left?"end":"start");
+    t.setAttribute("fill","#111827");
+    t.textContent = c.city + (c.score!==null?` ${c.score}`:"");
+    g.appendChild(ring);g.appendChild(dot);g.appendChild(t);
+    const tip = c.hasDetail?`${c.city}·${c.name} 好走度 ${c.score} 友好区 ${c.friendly}格`:`${c.city}·${c.name} 计算中`;
+    g.addEventListener("click",()=>openDetail(c));
+    g.style.cursor=c.hasDetail?"pointer":"default";
+    g.setAttribute("tabindex","0");
+    g.addEventListener("mouseenter",()=>g.setAttribute("opacity","0.8"));
+    g.addEventListener("mouseleave",()=>g.setAttribute("opacity","1"));
+    marks.appendChild(g);
+  }
+  // 列表
+  for(const c of cities){
+    const row=document.createElement("div");
+    row.className="row"+(c.hasDetail?"":" pending");
+    const sw=document.createElement("span");sw.className="sw";sw.style.background=color(c.score);
+    const nm=document.createElement("span");nm.className="nm";nm.textContent=`${c.city}·${c.name}`;
+    const meta=document.createElement("span");meta.className="meta";
+    meta.textContent = c.score!==null?`${c.score} 分 ｜ 友好区 ${c.friendly}格`:"待计算";
+    row.appendChild(sw);row.appendChild(nm);row.appendChild(meta);
+    if(c.hasDetail) row.addEventListener("click",()=>openDetail(c));
+    list.appendChild(row);
+  }
+}
+
+fetch("cities.json").then(r=>r.json()).then(render).catch(e=>{
+  list.innerHTML=`<div class="row">加载 cities.json 失败（请通过 GitHub Pages 打开，勿用本地 file://）。</div>`;
+  console.error(e);
+});
+</script>
+</body>
+</html>
