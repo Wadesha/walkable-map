@@ -209,4 +209,10 @@ python3 -m http.server 8000
   - 未算完城市显示灰色"待计算"，点击提示计算中。
 - 数据驱动：`gen_cities.py` 扫 `data/*.json` 产出 `stations/cities.json`（每城 score/friendly/hasDetail），始终含全部 17 城；后台每算完一站可重跑刷新。
 - 入口：https://wadesha.github.io/walkable-map/stations/overview.html （画廊页 https://wadesha.github.io/walkable-map/stations/static/ 仍保留，作逐站列表）。
+
+### 11.9 地名标注收敛：友好区内地标（≤3）+ `--render-only` 复用（2026-08-04 深夜）
+- 用户收敛：详细图的地名标注**不需要"离车站最近"的地标**，只抓**友好区内**有真实名称的有效地名（排除站名自身），**最多 3 个**即可；并继续推进其余站的批处理。
+- 实现：`render_static.py` 用 `ij_of(lng,lat)` 网格索引与友好区所有格子 `frij` 求交，仅取落在友好格内、有真实名称、且不等于站名的 POI，取前 3 个画 `▴名称`；同时保留最多 6 条高等级主干道路名（中点）标注、以及 ★ 站名。
+- `batch_stations.py` 新增 `--render-only` 模式：跳过 Overpass 重算，直接对已有 `data/<id>.json` 用最新 `render_static` 重新渲染 svg/html 并上传、重建画廊。用于「只改渲染、不动数据」的快速迭代（如本次规则变更），避免 12 站重复拉取 OSM。
+- 坐标精度：站点中心已按 OSM `railway=station` 节点/way 名称匹配回正（如北京南站回正到 116.3733, 39.8641，与真实站吻合），非 GCJ-02（OSM 本即 WGS-84）。
 - 现状：cities.json 初版 12 城已算分+有精细图，5 城（莫斯科/柏林/巴黎/纽约/伦敦）由后台批处理 `gntyc8` 计算中。
