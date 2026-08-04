@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1240" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif">
-<rect x="0" y="0" width="1200" height="1240" fill="#f7f9fb"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1260" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif">
+<rect x="0" y="0" width="1200" height="1260" fill="#f7f9fb"/>
 <text x="600.0" y="36" text-anchor="middle" font-size="22" font-weight="700" fill="#111827">北京南站 · 站周 2km 步行好走度（静态图 · 无 POI）</text>
 <text x="600.0" y="58" text-anchor="middle" font-size="13" fill="#6b7280">后台预计算 · 零依赖图片 · 街区底色与街道颜色均按「好走度」着色</text>
 <g stroke-linecap="round" stroke-linejoin="round">
@@ -2946,27 +2946,22 @@
 <polygon points="767.2,415.9 793.3,415.9 793.3,389.8 767.2,389.8 767.2,415.9" fill="rgb(147,190,111)" fill-opacity="0.45" stroke="#ffffff" stroke-width="0.3" stroke-opacity="0.5"/>
 </g>
 <g>
-<circle cx="490.8" cy="509.8" r="13" fill="#1a9850" stroke="#ffffff" stroke-width="2.5"/>
-<circle cx="490.8" cy="509.8" r="4.5" fill="#ffffff"/>
-<text x="506.8" y="495.8" font-size="12" font-weight="700" fill="#1a6b3a" stroke="#ffffff" stroke-width="3" paint-order="stroke">步行友好区</text>
-<circle cx="490.8" cy="483.7" r="13" fill="#1a9850" stroke="#ffffff" stroke-width="2.5"/>
-<circle cx="490.8" cy="483.7" r="4.5" fill="#ffffff"/>
-<text x="506.8" y="469.7" font-size="12" font-weight="700" fill="#1a6b3a" stroke="#ffffff" stroke-width="3" paint-order="stroke">步行友好区</text>
-<circle cx="464.8" cy="509.8" r="13" fill="#1a9850" stroke="#ffffff" stroke-width="2.5"/>
-<circle cx="464.8" cy="509.8" r="4.5" fill="#ffffff"/>
-<text x="480.8" y="495.8" font-size="12" font-weight="700" fill="#1a6b3a" stroke="#ffffff" stroke-width="3" paint-order="stroke">步行友好区</text>
-<circle cx="464.8" cy="588.0" r="13" fill="#1a9850" stroke="#ffffff" stroke-width="2.5"/>
-<circle cx="464.8" cy="588.0" r="4.5" fill="#ffffff"/>
-<text x="480.8" y="574.0" font-size="12" font-weight="700" fill="#1a6b3a" stroke="#ffffff" stroke-width="3" paint-order="stroke">步行友好区</text>
-<circle cx="647.3" cy="431.6" r="13" fill="#1a9850" stroke="#ffffff" stroke-width="2.5"/>
-<circle cx="647.3" cy="431.6" r="4.5" fill="#ffffff"/>
-<text x="663.3" y="417.6" font-size="12" font-weight="700" fill="#1a6b3a" stroke="#ffffff" stroke-width="3" paint-order="stroke">步行友好区</text>
+<path d="M636.8,389.8 L610.8,389.8M610.8,442.0 L636.8,442.0M610.8,468.1 L610.8,442.0M584.7,494.1 L610.8,494.1M610.8,494.1 L610.8,468.1M584.7,468.1 L584.7,494.1M558.6,468.1 L584.7,468.1M558.6,415.9 L558.6,442.0M584.7,389.8 L558.6,389.8M558.6,389.8 L558.6,415.9M610.8,389.8 L584.7,389.8M558.6,442.0 L532.5,442.0M532.5,494.1 L558.6,494.1M558.6,494.1 L558.6,468.1M532.5,520.2 L532.5,494.1M506.5,546.3 L532.5,546.3M532.5,546.3 L532.5,520.2M506.5,572.3 L506.5,546.3M480.4,598.4 L506.5,598.4M506.5,598.4 L506.5,572.3M454.3,572.3 L454.3,598.4M480.4,624.5 L480.4,598.4M454.3,598.4 L454.3,624.5M454.3,624.5 L454.3,650.6M454.3,676.6 L480.4,676.6M454.3,650.6 L454.3,676.6M480.4,676.6 L506.5,676.6M506.5,676.6 L506.5,650.6M506.5,650.6 L506.5,624.5M506.5,624.5 L480.4,624.5M454.3,546.3 L454.3,572.3M454.3,520.2 L454.3,546.3M454.3,494.1 L454.3,520.2M454.3,468.1 L454.3,494.1M454.3,442.0 L454.3,468.1M480.4,415.9 L454.3,415.9M454.3,415.9 L454.3,442.0M532.5,442.0 L532.5,415.9M532.5,415.9 L506.5,415.9M506.5,415.9 L506.5,389.8M506.5,389.8 L480.4,389.8M480.4,389.8 L480.4,415.9M636.8,468.1 L662.9,468.1M662.9,468.1 L662.9,442.0M636.8,442.0 L636.8,468.1M662.9,415.9 L662.9,389.8M662.9,389.8 L636.8,389.8M662.9,442.0 L689.0,442.0M689.0,442.0 L689.0,415.9M689.0,415.9 L662.9,415.9" fill="none" stroke="#0f7a3d" stroke-width="3.2" stroke-opacity="0.95" stroke-linejoin="round"/>
+<text x="541.9" y="481.5" font-size="12.5" font-weight="700" fill="#0f7a3d" stroke="#ffffff" stroke-width="3.2" paint-order="stroke">友好区·40格</text>
+<path d="M662.9,728.8 L689.0,728.8M689.0,676.6 L662.9,676.6M662.9,676.6 L636.8,676.6M636.8,728.8 L662.9,728.8M610.8,728.8 L636.8,728.8M636.8,676.6 L610.8,676.6M610.8,676.6 L610.8,702.7M584.7,728.8 L610.8,728.8M610.8,702.7 L584.7,702.7M584.7,702.7 L584.7,728.8M715.1,676.6 L689.0,676.6M689.0,728.8 L715.1,728.8M715.1,728.8 L741.1,728.8M741.1,650.6 L715.1,650.6M715.1,650.6 L715.1,676.6M767.2,676.6 L767.2,650.6M767.2,650.6 L741.1,650.6M767.2,702.7 L767.2,676.6M741.1,728.8 L767.2,728.8M767.2,728.8 L767.2,702.7" fill="none" stroke="#0f7a3d" stroke-width="3.2" stroke-opacity="0.95" stroke-linejoin="round"/>
+<text x="699.8" y="688.4" font-size="12.5" font-weight="700" fill="#0f7a3d" stroke="#ffffff" stroke-width="3.2" paint-order="stroke">友好区·15格</text>
+<path d="M767.2,468.1 L793.3,468.1M793.3,468.1 L793.3,442.0M793.3,442.0 L793.3,415.9M793.3,415.9 L793.3,389.8M793.3,389.8 L767.2,389.8M767.2,389.8 L741.1,389.8M741.1,494.1 L767.2,494.1M767.2,494.1 L767.2,468.1M715.1,494.1 L741.1,494.1M715.1,442.0 L715.1,468.1M715.1,415.9 L715.1,442.0M741.1,389.8 L715.1,389.8M715.1,389.8 L715.1,415.9M689.0,494.1 L715.1,494.1M715.1,468.1 L689.0,468.1M689.0,468.1 L689.0,494.1" fill="none" stroke="#0f7a3d" stroke-width="3.2" stroke-opacity="0.95" stroke-linejoin="round"/>
+<text x="757.7" y="432.0" font-size="12.5" font-weight="700" fill="#0f7a3d" stroke="#ffffff" stroke-width="3.2" paint-order="stroke">友好区·12格</text>
+<path d="M767.2,546.3 L793.3,546.3M793.3,546.3 L793.3,520.2M767.2,520.2 L767.2,546.3M793.3,520.2 L793.3,494.1M793.3,494.1 L767.2,494.1M767.2,494.1 L767.2,520.2" fill="none" stroke="#0f7a3d" stroke-width="3.2" stroke-opacity="0.95" stroke-linejoin="round"/>
+<text x="790.2" y="510.2" font-size="12.5" font-weight="700" fill="#0f7a3d" stroke="#ffffff" stroke-width="3.2" paint-order="stroke">友好区·2格</text>
+<path d="M558.6,702.7 L558.6,676.6M558.6,676.6 L532.5,676.6M532.5,676.6 L532.5,702.7M532.5,728.8 L558.6,728.8M558.6,728.8 L558.6,702.7M532.5,702.7 L532.5,728.8" fill="none" stroke="#0f7a3d" stroke-width="3.2" stroke-opacity="0.95" stroke-linejoin="round"/>
+<text x="555.6" y="692.7" font-size="12.5" font-weight="700" fill="#0f7a3d" stroke="#ffffff" stroke-width="3.2" paint-order="stroke">友好区·2格</text>
 </g>
 <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="rgb(215,48,39)"/><stop offset="25%" stop-color="rgb(234,136,89)"/><stop offset="50%" stop-color="rgb(254,224,139)"/><stop offset="75%" stop-color="rgb(140,188,110)"/><stop offset="100%" stop-color="rgb(26,152,80)"/></linearGradient></defs>
-<rect x="440.0" y="1154" width="320" height="16" fill="url(#g)" stroke="#d1d5db" stroke-width="1"/>
-<text x="440.0" y="1186" text-anchor="start" font-size="12" fill="#374151">0 差</text>
-<text x="600.0" y="1186" text-anchor="middle" font-size="12" fill="#374151">50 中</text>
-<text x="760.0" y="1186" text-anchor="end" font-size="12" fill="#374151">100 优</text>
-<text x="600.0" y="1210" text-anchor="middle" font-size="12.5" fill="#374151">街区底色 + 街道颜色 = 步行好走度（绿=好走 / 红=不好走）</text>
-<text x="600.0" y="1230" text-anchor="middle" font-size="11.5" fill="#9ca3af">真实数据：169 街区 + 2770 条真实街道（OSM 路网 + DEM 坡度）· 不含 POI</text>
+<rect x="440.0" y="1164" width="320" height="16" fill="url(#g)" stroke="#d1d5db" stroke-width="1"/>
+<text x="440.0" y="1196" text-anchor="start" font-size="12" fill="#374151">0 差</text>
+<text x="600.0" y="1196" text-anchor="middle" font-size="12" fill="#374151">50 中</text>
+<text x="760.0" y="1196" text-anchor="end" font-size="12" fill="#374151">100 优</text>
+<text x="600.0" y="1220" text-anchor="middle" font-size="12.5" fill="#374151">街区底色 + 街道颜色 = 步行好走度（绿=好走 / 红=不好走）</text>
+<text x="600.0" y="1242" text-anchor="middle" font-size="11.5" fill="#9ca3af">真实数据：169 街区 + 2770 条真实街道 ｜ 友好区域 5 片（71 格）· 不含 POI</text>
 </svg>
