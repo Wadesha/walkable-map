@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>步行友好地图 · 原型（模拟数据）</title>
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<style>
+  :root{
+    --bg:#f6f7f9; --panel:#ffffff; --ink:#1f2933; --muted:#62707b;
+    --line:#dce1e6; --brand:#185fa5; --brand-soft:#e6f1fb;
+    --good:#1a9850; --mid:#fee08b; --bad:#d73027;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+  #app{display:flex;height:100vh;overflow:hidden}
+  /* 侧栏 */
+  #side{width:380px;min-width:380px;height:100%;overflow-y:auto;background:var(--panel);border-right:1px solid var(--line);padding:0 0 40px}
+  #side .head{padding:18px 18px 12px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:5}
+  #side .head h1{font-size:17px;margin:0 0 4px}
+  #side .head p{margin:0;font-size:12px;color:var(--muted);line-height:1.5}
+  .sim-banner{margin:12px 14px 0;padding:8px 10px;border-radius:8px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:11.5px;line-height:1.5}
+  .sec{padding:14px 18px;border-bottom:1px solid var(--line)}
+  .sec h2{font-size:13.5px;margin:0 0 8px;color:var(--brand)}
+  .sec p,.sec li{font-size:12.5px;line-height:1.65;color:#37434d}
+  .sec ul{margin:6px 0 0;padding-left:18px}
+  details{border-bottom:1px solid var(--line)}
+  details>summary{cursor:pointer;padding:13px 18px;font-size:13.5px;font-weight:600;color:var(--ink);list-style:none;display:flex;align-items:center;gap:8px}
+  details>summary::-webkit-details-marker{display:none}
+  details>summary::before{content:"▸";color:var(--muted);transition:transform .15s}
+  details[open]>summary::before{transform:rotate(90deg)}
+  details .body{padding:0 18px 16px;font-size:12.5px;line-height:1.65;color:#37434d}
+  details .body p{margin:6px 0}
+  details .body table{width:100%;border-collapse:collapse;margin:8px 0;font-size:12px}
+  details .body th,details .body td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+  details .body th{background:var(--brand-soft);color:var(--brand);font-weight:600}
+  .tag{display:inline-block;font-size:10.5px;padding:1px 7px;border-radius:999px;background:var(--brand-soft);color:var(--brand);margin-left:6px}
+  .ctrl{margin:10px 0}
+  .ctrl label{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px}
+  .ctrl label b{color:var(--brand);font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%}
+  .checks{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .chk{font-size:11.5px;display:flex;align-items:center;gap:4px;padding:4px 8px;border:1px solid var(--line);border-radius:999px;cursor:pointer;user-select:none}
+  .chk input{margin:0}
+  .toggles{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+  .toggles label{display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer}
+  .btn{margin-top:10px;width:100%;padding:9px;border:1px solid var(--brand);background:var(--brand);color:#fff;border-radius:8px;font-size:13px;cursor:pointer}
+  .btn.ghost{background:#fff;color:var(--brand)}
+  /* 图例 */
+  .legend-bar{height:12px;border-radius:6px;background:linear-gradient(90deg,var(--bad),var(--mid),var(--good));margin:6px 0 2px}
+  .legend-scale{display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted)}
+  /* 排行 */
+  .rank{display:flex;flex-direction:column;gap:6px}
+  .rank .row{display:flex;align-items:center;gap:8px;font-size:12px}
+  .rank .bar{flex:1;height:8px;border-radius:4px;background:#eef1f4;overflow:hidden}
+  .rank .bar i{display:block;height:100%}
+  .rank .nm{width:84px;color:#37434d}
+  .rank .sc{width:34px;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink)}
+  /* 地图 */
+  #map{flex:1;height:100%}
+  .map-note{position:absolute;left:12px;bottom:12px;z-index:3;background:rgba(255,255,255,.92);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:11.5px;color:var(--muted);max-width:300px;line-height:1.5}
+  .hint{position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:3;background:var(--brand);color:#fff;padding:7px 14px;border-radius:999px;font-size:12.5px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+  /* 弹窗 */
+  .maplibregl-popup-content{font-size:12px;line-height:1.5;padding:12px}
+  .pop h3{margin:0 0 6px;font-size:13px}
+  .pop .mbar{display:flex;align-items:center;gap:6px;margin:3px 0;font-size:11px}
+  .pop .mbar span{width:54px;color:#62707b}
+  .pop .mbar .track{flex:1;height:7px;background:#eef1f4;border-radius:4px;overflow:hidden}
+  .pop .mbar .track i{display:block;height:100%}
+  .pop .tot{margin-top:6px;font-size:12px;font-weight:600}
+  .pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;color:#fff}
+  .foot{font-size:11px;color:var(--muted);padding:10px 18px}
+  code{background:#eef1f4;padding:1px 5px;border-radius:4px;font-size:11px}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="side">
+    <div class="head">
+      <h1>步行友好地图 · 原型</h1>
+      <p>一个用来思考“怎么定义 / 组织 / 展示适合步行的区域”的可交互原型。先看懂，再迭代。</p>
+    </div>
+    <div class="sim-banner">
+      ⚠️ 本页全部数据均为<strong>模拟生成</strong>：网格分数、POI、地形坡度都是用噪声函数和人为设定的公式算出来的，仅用于演示交互与说明，<strong>不代表任何真实地点的步行友好度</strong>。
+    </div>
+
+    <!-- 控制面板（始终可见） -->
+    <div class="sec">
+      <h2>控制面板</h2>
+      <div class="ctrl">
+        <label>最大步行时间 <b><span id="walkVal">10</span> 分钟</b></label>
+        <input id="walk" type="range" min="5" max="20" step="1" value="10" />
+        <div style="font-size:11px;color:var(--muted)">决定“从某点出发，走这么久能覆盖多大范围”（等时圈）。</div>
+      </div>
+      <div class="ctrl">
+        <label>最大可接受坡度 <b><span id="slopeVal">8</span>°</b></label>
+        <input id="slope" type="range" min="0" max="15" step="1" value="8" />
+        <div style="font-size:11px;color:var(--muted)">坡度超过此值的格子会被排除出“可步行范围”。</div>
+      </div>
+      <div class="ctrl">
+        <label>显示哪些设施（POI）</label>
+        <div class="checks" id="poiChecks">
+          <label class="chk"><input type="checkbox" value="park" checked />公园</label>
+          <label class="chk"><input type="checkbox" value="metro" checked />地铁</label>
+          <label class="chk"><input type="checkbox" value="shop" checked />商铺</label>
+          <label class="chk"><input type="checkbox" value="school" checked />学校</label>
+          <label class="chk"><input type="checkbox" value="hospital" checked />医院</label>
+        </div>
+      </div>
+      <div class="ctrl">
+        <label>图层开关</label>
+        <div class="toggles">
+          <label><input type="checkbox" id="tHeat" checked /> 步行友好热力图（每格评分）</label>
+          <label><input type="checkbox" id="tIso" checked /> 等时圈（点地图任意处生成）</label>
+          <label><input type="checkbox" id="tPoi" checked /> 设施点（POI）</label>
+          <label><input type="checkbox" id="tBorder" /> 网格边界线</label>
+        </div>
+      </div>
+      <button class="btn ghost" id="reset">清除等时圈 / 重置</button>
+    </div>
+
+    <!-- 街区排行 -->
+    <div class="sec">
+      <h2>街区排行（模拟）</h2>
+      <p style="font-size:11.5px;color:var(--muted);margin:0 0 8px">把整片网格切成 3×3 个“街区”，按平均步行友好度排序。点击地图也能看单格明细。</p>
+      <div class="rank" id="rank"></div>
+    </div>
+
+    <!-- 说明文档 -->
+    <details open>
+      <summary>① 这是什么 / 怎么读</summary>
+      <div class="body">
+        <p>这张图把一片城区切成很多小方格，每个格子算出一个 <b>0–100 的步行友好分数</b>，用红→黄→绿表示：绿=好走，红=难走。</p>
+        <p><b>怎么读：</b></p>
+        <ul>
+          <li>颜色越绿，代表从这片区域步行出行越方便、越舒服、越安全。</li>
+          <li>点地图上的<b>任意位置</b>，会以该点为中心画一个<b>等时圈</b>——按当前“最大步行时间 / 最大坡度”能走到的范围（蓝色高亮）。</li>
+          <li>点某个<b>格子</b>，弹窗里给出 5 个维度的拆解分数。</li>
+          <li>左侧“街区排行”把整片区域分成 9 块，看哪片整体更好走。</li>
+        </ul>
+        <div class="legend-bar"></div>
+        <div class="legend-scale"><span>0 差</span><span>50 中</span><span>100 优</span></div>
+      </div>
+    </details>
+
+    <details>
+      <summary>② 步行友好的 5 个维度<span class="tag">怎么定义</span></summary>
+      <div class="body">
+        <p>“好走”不是一句话，而是 5 个可量化维度的加权组合。原型里每个维度都用模拟数据近似：</p>
+        <table>
+          <tr><th>维度</th><th>含义</th><th>原型里的模拟近似</th></tr>
+          <tr><td>可达性</td><td>几分钟能走到目的地</td><td>到各类 POI 的距离衰减求和（越近越高）</td></tr>
+          <tr><td>连通性</td><td>路网密不密、街块大不大</td><td>噪声函数生成“路网密度”，中心略高</td></tr>
+          <tr><td>舒适性</td><td>坡度、绿荫、路面</td><td>噪声生成坡度；公园附近额外加“绿荫”分</td></tr>
+          <tr><td>安全性</td><td>车速、过街、照明</td><td>噪声生成（模拟主干道附近得分低）</td></tr>
+          <tr><td>吸引力</td><td>设施种类多不多</td><td>800m 内覆盖的设施类型数量 / 5</td></tr>
+        </table>
+        <p><b>综合分数</b>（权重可在方法学里看到）：<br><code>0.30·可达 + 0.18·连通 + 0.17·舒适 + 0.15·安全 + 0.20·吸引</code>。用连续分数而非“好/坏”二分，才有对比和改进空间。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>③ 数据从哪来<span class="tag">怎么组织</span></summary>
+      <div class="body">
+        <p>真实项目里，这部分应来自：路网（带属性）、地形 DEM（坡度）、POI（设施）、土地利用（混合度）。本原型用<b>纯前端模拟</b>替代，方便你直接打开就看效果：</p>
+        <ul>
+          <li><b>网格</b>：以中心点切出 22×22 个方格，每格约 170m（≈3.9km×3.5km 的城区）。</li>
+          <li><b>POI</b>：手工摆了 8 个模拟点（公园×2、地铁×2、商铺×2、学校×1、医院×1）。</li>
+          <li><b>分数</b>：每个格子按上面 5 个维度分别计算，再加权合成，见方法学。</li>
+          <li><b>等时圈</b>：从点击点出发，<code>步行速度 80m/分 × 时间</code> 得到半径，且坡度不超过阈值——满足的格子高亮。</li>
+        </ul>
+        <p style="color:#9a3412">注意：距离用的是<b>直线距离（欧几里得）</b>，不是真实路网步行距离；等时圈因此是“近似圆”，真实情况会被道路走向、围墙、河流切碎。这是原型的已知简化。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>④ 方法学 / 评分公式<span class="tag">透明</span></summary>
+      <div class="body">
+        <p>为了让“模拟”可被检验，公式完全公开。设格子中心为 <code>c</code>，POI 集合为 <code>P</code>：</p>
+        <p><b>可达性</b> <code>access = min(100, Σ w_t · exp(-d/450)) · 55</code><br>其中 <code>d</code> 是 <code>c</code> 到第 <code>t</code> 类 POI 的距离(米)，<code>w</code> = 公园1.0 / 地铁1.2 / 商铺0.9 / 学校0.7 / 医院0.8，仅计入 1400m 内。</p>
+        <p><b>吸引力</b> <code>attr = min(100, 800m内覆盖的设施类型数 / 5 × 100)</code>。</p>
+        <p><b>连通性</b> <code>conn = 20 + 60·noise(c) + 10·(1 − min(1, 到中心距离/1500))</code>。</p>
+        <p><b>舒适性</b> <code>comfort = clamp(90 − 坡度°×4 − (1−noise₂)×20 + 公园附近绿荫, 0, 100)</code>。</p>
+        <p><b>安全性</b> <code>safety = clamp(95 − 40·noise₃, 0, 100)</code>（模拟主干道附近偏低）。</p>
+        <p><code>noise</code> 是 <code>(sin+cos 组合 + 4)/8</code> 的平滑伪随机，保证相邻格相近、整片有起伏。</p>
+        <p><b>综合</b> <code>score = 0.30·access + 0.18·conn + 0.17·comfort + 0.15·safety + 0.20·attr</code>。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>⑤ 能做什么 / 已知局限<span class="tag">诚实</span></summary>
+      <div class="body">
+        <p><b>这个原型能帮你：</b></p>
+        <ul>
+          <li>把“步行友好”从一句口号，变成可看、可点、可对比的地图。</li>
+          <li>验证“定义→组织→展示”这条链路在网页上是否走得通。</li>
+          <li>作为和规划者 / 居民讨论的<b>可视化沟通工具</b>。</li>
+        </ul>
+        <p><b>局限（下一步要补的）：</b></p>
+        <ul>
+          <li>距离是直线，不是真实路网步行距离。</li>
+          <li>坡度/安全是噪声模拟，不是真实 DEM 与事故数据。</li>
+          <li>没有后端，刷新即重算；真实项目应接 PostGIS + OSRM/Turf 等服务。</li>
+          <li>权重是拍定的，真实项目应由居民调研或文献确定。</li>
+        </ul>
+      </div>
+    </details>
+
+    <div class="foot">原型 · 单文件 · MapLibre GL JS + 模拟数据 · 部署于 GitHub Pages</div>
+  </aside>
+
+  <main style="position:relative;flex:1">
+    <div id="map"></div>
+    <div class="hint" id="hint">点击地图任意处 → 生成等时圈</div>
+    <div class="map-note">底图 © OpenStreetMap contributors © CARTO。所有步行友好数据均为模拟，仅供原型演示。</div>
+  </main>
+</div>
+
+<script>
+// ---------- 配置 ----------
+const CENTER = [116.397, 39.908];   // 中心点（北京，纯示意）
+const GRID_N = 22;                  // 每边格数
+const CELL   = 0.0016;              // 每格约 170m
+const WALK_SPEED = 80;              // 步行速度 m/分
+const POI_WEIGHT = {park:1.0, metro:1.2, shop:0.9, school:0.7, hospital:0.8};
+
+// 模拟 POI（手工摆放，均在网格范围内）
+const POIS = [
+  {lng:116.391, lat:39.914, type:'park',    name:'北园(模拟)'},
+  {lng:116.403, lat:39.902, type:'park',    name:'南园(模拟)'},
+  {lng:116.399, lat:39.910, type:'metro',   name:'中心站(模拟)'},
+  {lng:116.388, lat:39.905, type:'metro',   name:'西站(模拟)'},
+  {lng:116.401, lat:39.915, type:'shop',    name:'商业街(模拟)'},
+  {lng:116.395, lat:39.900, type:'shop',    name:'市集(模拟)'},
+  {lng:116.405, lat:39.907, type:'school',  name:'实验学校(模拟)'},
+  {lng:116.390, lat:39.908, type:'hospital',name:'第一医院(模拟)'},
+];
+const POI_COLOR = {park:'#16a34a', metro:'#2563eb', shop:'#d97706', school:'#7c3aed', hospital:'#dc2626'};
+
+// ---------- 工具函数 ----------
+function hav(lng1,lat1,lng2,lat2){
+  const R=6371000, r=Math.PI/180;
+  const dLat=(lat2-lat1)*r, dLng=(lng2-lng1)*r;
+  const a=Math.sin(dLat/2)**2 + Math.cos(lat1*r)*Math.cos(lat2*r)*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(a));
+}
+// 平滑伪随机噪声，返回 0..1
+function noise(x,y){
+  return (Math.sin(x*0.9)+Math.cos(y*1.1)+Math.sin((x+y)*0.6)+Math.cos((x-y)*0.7)+4)/8;
+}
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+// ---------- 计算每格分数 ----------
+function scoreCell(cx,cy){
+  // 可达性 + 吸引力
+  let acc=0; const types=new Set();
+  for(const p of POIS){
+    const d=hav(cx,cy,p.lng,p.lat);
+    if(d<1400){
+      acc += POI_WEIGHT[p.type]*Math.exp(-d/450);
+      if(d<800) types.add(p.type);
+    }
+  }
+  const access = Math.min(100, acc*55);
+  const attr   = Math.min(100, types.size/5*100);
+  // 连通性
+  const conn = clamp(20 + 60*noise(cx*30,cy*30) + 10*(1-Math.min(1,hav(cx,cy,CENTER[0],CENTER[1])/1500)),0,100);
+  // 舒适性：坡度 + 绿荫
+  const slopeDeg = 2 + 10*noise(cx*30+5, cy*30+3);
+  let green=0;
+  for(const p of POIS){ if(p.type==='park' && hav(cx,cy,p.lng,p.lat)<600){ green=15; break; } }
+  const comfort = clamp(90 - slopeDeg*4 - (1-noise(cx*30+9,cy*30+2))*20 + green,0,100);
+  // 安全性（模拟主干道附近偏低）
+  const safety = clamp(95 - 40*noise(cx*30+2, cy*30+7),0,100);
+  // 综合
+  const score = 0.30*access + 0.18*conn + 0.17*comfort + 0.15*safety + 0.20*attr;
+  return {
+    score:Math.round(score), access:Math.round(access), conn:Math.round(conn),
+    comfort:Math.round(comfort), safety:Math.round(safety), attr:Math.round(attr),
+    slope:Math.round(slopeDeg*10)/10
+  };
+}
+
+// ---------- 构建网格 GeoJSON ----------
+const cells = {type:'FeatureCollection', features:[]};
+for(let i=0;i<GRID_N;i++){
+  for(let j=0;j<GRID_N;j++){
+    const swLng = CENTER[0] + (i-GRID_N/2)*CELL;
+    const swLat = CENTER[1] + (j-GRID_N/2)*CELL;
+    const cx = swLng + CELL/2, cy = swLat + CELL/2;
+    const s = scoreCell(cx,cy);
+    cells.features.push({
+      type:'Feature',
+      geometry:{type:'Polygon', coordinates:[[
+        [swLng,swLat],[swLng+CELL,swLat],[swLng+CELL,swLat+CELL],[swLng,swLat+CELL],[swLng,swLat]
+      ]]},
+      properties: Object.assign({center:[cx,cy], row:j, col:i}, s)
+    });
+  }
+}
+
+// ---------- 地图 ----------
+const map = new maplibregl.Map({
+  container:'map',
+  style:{
+    version:8,
+    sources:{
+      base:{
+        type:'raster',
+        tiles:[
+          'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+          'https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+          'https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+          'https://d.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'
+        ],
+        tileSize:256,
+        attribution:'© OpenStreetMap contributors © CARTO'
+      }
+    },
+    layers:[{id:'base', type:'raster', source:'base'}]
+  },
+  center:CENTER,
+  zoom:13.2
+});
+map.addControl(new maplibregl.NavigationControl(),'top-right');
+
+const poiGeo = {type:'FeatureCollection', features:POIS.map(p=>({
+  type:'Feature', geometry:{type:'Point', coordinates:[p.lng,p.lat]}, properties:p
+}))};
+
+let originMarker=null;
+
+map.on('load', ()=>{
+  // 热力图（每格评分）
+  map.addSource('cells', {type:'geojson', data:cells});
+  map.addLayer({
+    id:'heat', type:'fill', source:'cells',
+    paint:{
+      'fill-color':['interpolate',['linear'],['get','score'],
+        0,'#d73027', 50,'#fee08b', 100,'#1a9850'],
+      'fill-opacity':0.62
+    }
+  });
+  map.addLayer({
+    id:'heat-border', type:'line', source:'cells',
+    layout:{'visibility':'none'},
+    paint:{'line-color':'#ffffff','line-width':0.4,'line-opacity':0.35}
+  });
+
+  // 等时圈层
+  map.addSource('iso', {type:'geojson', data:{type:'FeatureCollection',features:[]}});
+  map.addLayer({
+    id:'iso-fill', type:'fill', source:'iso',
+    paint:{'fill-color':'#185fa5','fill-opacity':0.32}
+  });
+  map.addLayer({
+    id:'iso-line', type:'line', source:'iso',
+    paint:{'line-color':'#185fa5','line-width':1.4,'line-dasharray':[2,1]}
+  });
+
+  // POI 层
+  map.addSource('pois', {type:'geojson', data:poiGeo});
+  map.addLayer({
+    id:'poi', type:'circle', source:'pois',
+    paint:{
+      'circle-radius':6, 'circle-color':['get','type'],
+      'circle-stroke-color':'#fff','circle-stroke-width':1.5
+    }
+  });
+  // 用真实颜色映射 type
+  map.setPaintProperty('poi','circle-color',
+    ['match',['get','type'], 'park',POI_COLOR.park,'metro',POI_COLOR.metro,'shop',POI_COLOR.shop,'school',POI_COLOR.school,'hospital',POI_COLOR.hospital,'#888']);
+
+  // 弹窗：点格子看明细
+  map.on('click','heat',(e)=>{
+    const f=e.features[0]; const p=f.properties;
+    new maplibregl.Popup({closeButton:true})
+      .setLngLat(p.center)
+      .setHTML(popupHTML(p))
+      .addTo(map);
+  });
+  map.on('mouseenter','heat',()=>map.getCanvas().style.cursor='pointer');
+  map.on('mouseleave','heat',()=>map.getCanvas().style.cursor='');
+
+  // 点地图任意处 → 等时圈
+  map.on('click',(e)=>{ setIsochrone(e.lngLat); });
+
+  renderRank();
+});
+
+// ---------- 弹窗内容 ----------
+function barRow(label,val){
+  const c = val>=70?'#1a9850':val>=45?'#eab308':val>=25?'#f97316':'#d73027';
+  return `<div class="mbar"><span>${label}</span><div class="track"><i style="width:${val}%;background:${c}"></i></div></div>`;
+}
+function grade(s){ return s>=80?'优':s>=65?'良':s>=50?'中':s>=35?'较差':'差'; }
+function gradeColor(s){ return s>=80?'#16a34a':s>=65?'#65a30d':s>=50?'#ca8a04':s>=35?'#ea580c':'#dc2626'; }
+function popupHTML(p){
+  return `<div class="pop"><h3>步行友好度 <span class="pill" style="background:${gradeColor(p.score)}">${p.score} · ${grade(p.score)}</span></h3>
+    ${barRow('可达性',p.access)}${barRow('连通性',p.conn)}${barRow('舒适性',p.comfort)}${barRow('安全性',p.safety)}${barRow('吸引力',p.attr)}
+    <div class="tot">综合 ${p.score}/100 ｜ 模拟坡度 ${p.slope}°</div></div>`;
+}
+
+// ---------- 等时圈 ----------
+function setIsochrone(lngLat){
+  const maxDist = WALK_SPEED * state.walkMin;
+  const feats = cells.features.filter(f=>{
+    const c=f.properties.center;
+    return hav(c[0],c[1],lngLat.lng,lngLat.lat)<=maxDist && f.properties.slope<=state.maxSlope;
+  });
+  map.getSource('iso').setData({type:'FeatureCollection',features:feats});
+  if(originMarker) originMarker.remove();
+  originMarker = new maplibregl.Marker({color:'#185fa5'}).setLngLat([lngLat.lng,lngLat.lat]).addTo(map);
+  document.getElementById('hint').textContent = `等时圈：${state.walkMin} 分钟内、坡度≤${state.maxSlope}° 可到达的高亮范围（${feats.length} 格）`;
+}
+
+// ---------- 街区排行（3×3）----------
+function renderRank(){
+  const g=3, buckets=Array.from({length:g*g},()=>({sum:0,n:0}));
+  for(const f of cells.features){
+    const bi=Math.min(g-1,Math.floor(f.properties.col/(GRID_N/g)));
+    const bj=Math.min(g-1,Math.floor(f.properties.row/(GRID_N/g)));
+    const idx=bj*g+bi;
+    buckets[idx].sum+=f.properties.score; buckets[idx].n++;
+  }
+  const ranked = buckets.map((b,i)=>({name:`街区 ${i+1}`, avg:Math.round(b.sum/b.n)}))
+                        .sort((a,b)=>b.avg-a.avg);
+  const el=document.getElementById('rank');
+  el.innerHTML = ranked.map(r=>`<div class="row"><span class="nm">${r.name}</span>
+    <div class="bar"><i style="width:${r.avg}%;background:${gradeColor(r.avg)}"></i></div>
+    <span class="sc">${r.avg}</span></div>`).join('');
+}
+
+// ---------- 状态 & 交互 ----------
+const state = {walkMin:10, maxSlope:8};
+const $=id=>document.getElementById(id);
+
+$('walk').addEventListener('input',e=>{ state.walkMin=+e.target.value; $('walkVal').textContent=state.walkMin; });
+$('slope').addEventListener('input',e=>{ state.maxSlope=+e.target.value; $('slopeVal').textContent=state.maxSlope; });
+$('reset').addEventListener('click',()=>{
+  map.getSource('iso').setData({type:'FeatureCollection',features:[]});
+  if(originMarker){originMarker.remove();originMarker=null;}
+  document.getElementById('hint').textContent='点击地图任意处 → 生成等时圈';
+});
+
+// 设施筛选
+function applyPoiFilter(){
+  const on=Array.from(document.querySelectorAll('#poiChecks input:checked')).map(c=>c.value);
+  map.setFilter('poi', on.length?['in',['get','type'],['literal',on]]:['==',['get','type'],'__none__']);
+}
+document.querySelectorAll('#poiChecks input').forEach(c=>c.addEventListener('change',applyPoiFilter));
+
+// 图层开关
+$('tHeat').addEventListener('change',e=>{ map.setLayoutProperty('heat','visibility',e.target.checked?'visible':'none'); map.setLayoutProperty('heat-border','visibility',e.target.checked?'visible':'none'); });
+$('tIso').addEventListener('change',e=>{ const v=e.target.checked?'visible':'none'; map.setLayoutProperty('iso-fill','visibility',v); map.setLayoutProperty('iso-line','visibility',v); });
+$('tPoi').addEventListener('change',e=>{ map.setLayoutProperty('poi','visibility',e.target.checked?'visible':'none'); });
+$('tBorder').addEventListener('change',e=>{ map.setLayoutProperty('heat-border','visibility',e.target.checked?'visible':'none'); });
+</script>
+</body>
+</html>
