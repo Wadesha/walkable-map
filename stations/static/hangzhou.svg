@@ -3446,11 +3446,9 @@
 <text x="609.0" y="597.6">艮山西路</text>
 <text x="322.1" y="799.9">昙花庵路</text>
 <text x="675.7" y="810.4">钱江路</text>
-<text x="559.9" y="608.7">▴元宝塘</text>
-<text x="595.6" y="660.9">▴浙江大学幼儿园(钱江分园)</text>
+<text x="588.0" y="471.7">▴地铁支路明月桥路西南角自行车租赁点</text>
 <text x="593.4" y="554.2">▴彭埠家园西大门自行车租赁点</text>
-<text x="622.6" y="578.2">▴夏衍第二小学</text>
-<text x="510.7" y="661.5">▴省公安厅交通管理局</text>
+<text x="587.2" y="726.3">▴昙花庵路</text>
 </g>
 <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="rgb(215,48,39)"/><stop offset="25%" stop-color="rgb(234,136,89)"/><stop offset="50%" stop-color="rgb(254,224,139)"/><stop offset="75%" stop-color="rgb(140,188,110)"/><stop offset="100%" stop-color="rgb(26,152,80)"/></linearGradient></defs>
 <rect x="440.0" y="1164" width="320" height="16" fill="url(#g)" stroke="#d1d5db" stroke-width="1"/>
