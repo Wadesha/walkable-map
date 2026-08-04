@@ -225,6 +225,29 @@ out geom;""").replace("__BBOX__",bbox)
         pois.append({"lng":pll[0],"lat":pll[1],"type":ctype,"name":name})
     print(f"[{sid}]      路网 way 段: {len(ways)} ｜ POI: {len(pois)} ｜ 建筑: {len(buildings)} ｜ 绿地: {len(greens)}")
 
+    # 用 OSM 真实车站要素回正中心（避免硬编码坐标偏差 / 坐标系不一致）
+    true_center = (lng0, lat0); best_d = 1e18
+    for el in data.get("elements", []):
+        t = el.get("type"); tags = el.get("tags", {})
+        rw = tags.get("railway")
+        if rw not in ("station", "halt", "stop", "tram_stop", "subway_station"):
+            continue
+        if t == "node" and "lat" in el:
+            c = (el["lon"], el["lat"])
+        elif t == "way" and el.get("geometry"):
+            g = coords_of(el)
+            if not g: continue
+            c = (sum(x[0] for x in g) / len(g), sum(x[1] for x in g) / len(g))
+        else:
+            continue
+        d = hav(c[0], c[1], lng0, lat0)
+        if st["name"] in (tags.get("name") or ""):
+            d -= 5000  # 名称匹配强烈优先
+        if d < best_d:
+            best_d = d; true_center = c
+    lng0, lat0 = true_center
+    print(f"[{sid}]      中心回正: ({lng0:.5f},{lat0:.5f})")
+
     bld_feats=[]; green_feats=[]
     for w in buildings:
         g=coords_of(w)
@@ -393,9 +416,10 @@ out geom;""").replace("__BBOX__",bbox)
             if L>1: slope=math.degrees(math.atan(abs(e1-e0)/L))
         md=min((hav(m[0],m[1],clng,clat) for m in major), default=9999)
         walk=road_walk(hw,slope,md)
+        wname=w.get("tags",{}).get("name") or w.get("tags",{}).get("name:en") or ""
         roads.append({"type":"Feature",
             "geometry":{"type":"LineString","coordinates":[[c[0],c[1]] for c in geo]},
-            "properties":{"hw":hw,"walk":walk,"slope":round(slope,1)}})
+            "properties":{"hw":hw,"walk":walk,"slope":round(slope,1),"name":wname}})
     rw=[r["properties"]["walk"] for r in roads]
     print(f"[{sid}]      街道段: {len(roads)} ｜ 好走度范围 {min(rw)}–{max(rw)} 均值 {sum(rw)/len(rw):.1f}")
 
