@@ -112,7 +112,7 @@ def render(sid):
     out.append(f'<text x="{Wpx/2}" y="36" text-anchor="middle" font-size="22" font-weight="700" fill="#111827">'
                f'{data["name"]} · 站周 2km 步行好走度（静态图 · 无 POI）</text>')
     out.append(f'<text x="{Wpx/2}" y="58" text-anchor="middle" font-size="13" fill="#6b7280">'
-               f'后台预计算 · 零依赖图片（OSM 建筑/绿地底图烤入，无在线瓦片）· 街区底色与街道颜色按「好走度」</text>')
+               f'后台预计算 · 零依赖图片（OSM 建筑/绿地底图烤入，无在线瓦片）· 含站名/路名/地标标注 · 街区底色与街道颜色按「好走度」</text>')
 
     # ---- 街区好走度底色：先铺底层（半透明），建筑/绿地/街道叠其上 ----
     out.append('<g>')
@@ -205,6 +205,31 @@ def render(sid):
     out.append(f'<text x="{sx+9:.1f}" y="{sy+4:.1f}" font-size="14" font-weight="700" '
                f'fill="#111827" stroke="#ffffff" stroke-width="3.4" paint-order="stroke">'
                f'★ {data["name"]}</text>')
+    out.append('</g>')
+
+    # 少量地名：主干道名 + 地标名（仅文字，避免 POI 点 clutter）
+    out.append('<g font-size="10.5" font-weight="600" fill="#3b4252" stroke="#ffffff" stroke-width="2.6" paint-order="stroke">')
+    _rl=[]
+    for r in data.get("roads",{}).get("features",[]):
+        p=r["properties"]; nm=p.get("name","")
+        if not nm: continue
+        if p.get("hw") not in ("primary","primary_link","secondary","secondary_link","trunk","trunk_link","tertiary","tertiary_link"): continue
+        coords=r["geometry"]["coordinates"]
+        mid=coords[len(coords)//2]
+        _rl.append((to_m(*mid[:2]), nm))
+    for (m,nm) in _rl[:6]:
+        px,py=P(*m)
+        out.append(f'<text x="{px:.1f}" y="{py:.1f}">{nm}</text>')
+    _lm=[]
+    for p in data.get("pois",[]):
+        nm=p.get("name","")
+        if not nm or nm==p.get("type") or nm==data["name"]: continue
+        mx,my=to_m(p["lng"],p["lat"])
+        _lm.append((math.hypot(mx,my), p))
+    _lm.sort(key=lambda x:x[0])
+    for d,p in _lm[:5]:
+        px,py=P(*to_m(p["lng"],p["lat"]))
+        out.append(f'<text x="{px+4:.1f}" y="{py+3:.1f}">▴{p["name"]}</text>')
     out.append('</g>')
 
     # 图例
