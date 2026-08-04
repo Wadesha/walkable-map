@@ -2268,11 +2268,9 @@
 <text x="764.6" y="819.1">利源中路</text>
 <text x="471.1" y="287.8">机场连接线</text>
 <text x="585.9" y="700.3">胜太西路</text>
-<text x="657.2" y="354.8">▴南京南</text>
-<text x="650.5" y="341.3">▴麦当劳</text>
+<text x="630.1" y="342.8">▴南京汽车客运南站</text>
 <text x="642.4" y="348.1">▴星巴克</text>
 <text x="634.4" y="345.4">▴肯德基</text>
-<text x="630.1" y="342.8">▴南京汽车客运南站</text>
 </g>
 <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="rgb(215,48,39)"/><stop offset="25%" stop-color="rgb(234,136,89)"/><stop offset="50%" stop-color="rgb(254,224,139)"/><stop offset="75%" stop-color="rgb(140,188,110)"/><stop offset="100%" stop-color="rgb(26,152,80)"/></linearGradient></defs>
 <rect x="440.0" y="1164" width="320" height="16" fill="url(#g)" stroke="#d1d5db" stroke-width="1"/>
