@@ -192,3 +192,10 @@ python3 -m http.server 8000
 - 友好区域定义：无 POI 重加权好走度 ≥ 65 的相邻格子，连通聚类成片；输出外轮廓 `edges` 与格数，静态图以绿色粗线勾边 + 「友好区·N格」标注。
 - 管线：`build_station.compute_station(id)`（含聚类）→ `render_static.render(id)`（写 svg/html）→ `batch_stations.py` 遍历上传（Contents API）+ 重建 `stations/static/index.html` 画廊页。支持断点续跑、Overpass 多端点容错重试、站间慢速暂停、失败跳过。
 - 前台有限展示：画廊页 https://wadesha.github.io/walkable-map/stations/static/ （列出各站静态图链接 + 友好区域统计），后台持续补充。
+
+### 11.7 底图演进：纯图片 → 烤入 OSM 建筑/绿地底图（2026-08-04 晚）
+- 用户反馈：纯图片无底图「并非最理想」——色块/街道悬空、缺地理参照。
+- 决策：**不回到 CARTO 在线瓦片**（国内易失效），而是把已下载的 OSM 全量路网 + 新增抓取的**建筑 footprint + 绿地**离线烤入 SVG 底层作地理参照。
+- 实现：`build_station.py` 的 Overpass 查询新增 `way["building"]`（及 `leisure=park/garden` 绿地），存为 `buildings`/`greens` FeatureCollection；`render_static.py` 在最底层画绿地（浅绿）→ 建筑块（浅灰）→ 2km 研究圈（虚线），其上叠街区好走度半透明底色（透明度 0.30 透出肌理）+ 街道好走度着色 + 友好区轮廓。
+- 仍满足：零运行时依赖、无 MapLibre、无在线瓦片、无 JS、无 POI；只是图片本身更"像真地方"。
+- 代价：SVG 体积变大（北京 475KB→972KB，主要因建筑多边形）；对超密城市（东京/伦敦）建筑数可达数万，需注意体积。
