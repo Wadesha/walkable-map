@@ -114,24 +114,23 @@ def render(sid):
     out.append(f'<text x="{Wpx/2}" y="58" text-anchor="middle" font-size="13" fill="#6b7280">'
                f'后台预计算 · 零依赖图片（OSM 建筑/绿地底图烤入，无在线瓦片）· 街区底色与街道颜色按「好走度」</text>')
 
-    # ---- 上下文底图（烤入的 OSM 建筑/绿地 + 2km 研究圈），提供地理参照 ----
-    # 2km 研究范围圈
-    R = 2000
-    circ = []
-    import math as _m
-    for k in range(73):
-        a = 2 * _m.pi * k / 72
-        circ.append(P(R * _m.cos(a), R * _m.sin(a)))
-    out.append(f'<path d="M{" L".join(f"{x:.1f},{y:.1f}" for (x, y) in circ)} Z" '
-               f'fill="none" stroke="#9aa3ad" stroke-width="1.2" stroke-dasharray="5 4" stroke-opacity="0.8"/>')
-    # 绿地（浅绿）
+    # ---- 街区好走度底色：先铺底层（半透明），建筑/绿地/街道叠其上 ----
+    out.append('<g>')
+    for proj, sc, props in cell_pts:
+        pts = " ".join(f"{P(mx,my)[0]:.1f},{P(mx,my)[1]:.1f}" for (mx, my) in proj)
+        out.append(f'<polygon points="{pts}" fill="{color(sc)}" fill-opacity="0.28" '
+                   f'stroke="#ffffff" stroke-width="0.3" stroke-opacity="0.5"/>')
+    out.append('</g>')
+
+    # ---- 上下文底图（烤入的 OSM 建筑/绿地），提供地理参照 ----
+    # 绿地（浅绿，叠在底色之上）
     out.append('<g>')
     for proj in green_pts:
         if len(proj) < 3: continue
         pts = " ".join(f"{P(mx,my)[0]:.1f},{P(mx,my)[1]:.1f}" for (mx, my) in proj)
-        out.append(f'<polygon points="{pts}" fill="#cfe9c9" stroke="#bcdcb4" stroke-width="0.4" fill-opacity="0.85"/>')
+        out.append(f'<polygon points="{pts}" fill="#bfe2ac" stroke="#a9d394" stroke-width="0.4" fill-opacity="0.9"/>')
     out.append('</g>')
-    # 建筑底面（浅灰块，构成城市肌理）；超密城市按面积取前 N 控制体积
+    # 建筑底面（清晰灰块，构成城市肌理）；超密城市按面积取前 N 控制体积
     BLD_CAP = 8000
     if len(bld_pts) > BLD_CAP:
         def _area(p):
@@ -144,10 +143,10 @@ def render(sid):
     for proj in bld_pts:
         if len(proj) < 3: continue
         pts = " ".join(f"{P(mx,my)[0]:.1f},{P(mx,my)[1]:.1f}" for (mx, my) in proj)
-        out.append(f'<polygon points="{pts}" fill="#dfe3e8" stroke="#ccd2da" stroke-width="0.3" fill-opacity="0.9"/>')
+        out.append(f'<polygon points="{pts}" fill="#c2cad6" stroke="#a9b2c0" stroke-width="0.3" fill-opacity="0.92"/>')
     out.append('</g>')
 
-    # 街道（按好走度着色，叠在底图之上）
+    # 街道（按好走度着色，叠在最上）
     out.append('<g stroke-linecap="round" stroke-linejoin="round">')
     for proj, walk, hw in road_pts:
         if len(proj) < 2:
@@ -158,13 +157,15 @@ def render(sid):
                    f'stroke-width="{w:.2f}" stroke-opacity="0.92"/>')
     out.append('</g>')
 
-    # 街区底色（半透明覆盖，透出底层建筑肌理）
-    out.append('<g>')
-    for proj, sc, props in cell_pts:
-        pts = " ".join(f"{P(mx,my)[0]:.1f},{P(mx,my)[1]:.1f}" for (mx, my) in proj)
-        out.append(f'<polygon points="{pts}" fill="{color(sc)}" fill-opacity="0.30" '
-                   f'stroke="#ffffff" stroke-width="0.3" stroke-opacity="0.5"/>')
-    out.append('</g>')
+    # 2km 研究范围圈（虚线，最上便于看清边界）
+    R = 2000
+    circ = []
+    import math as _m
+    for k in range(73):
+        a = 2 * _m.pi * k / 72
+        circ.append(P(R * _m.cos(a), R * _m.sin(a)))
+    out.append(f'<path d="M{" L".join(f"{x:.1f},{y:.1f}" for (x, y) in circ)} Z" '
+               f'fill="none" stroke="#9aa3ad" stroke-width="1.2" stroke-dasharray="5 4" stroke-opacity="0.8"/>')
 
     # 友好区域：连通聚类外轮廓 + 标注
     areas = data.get("friendly_areas", [])
