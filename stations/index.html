@@ -57,7 +57,7 @@
       <h1>火车站 2km 步行友好专题</h1>
       <p>对每个有火车站的城市,单独做一片「站周 2 公里」步行友好地图。演示版:真实坐标 + 模拟数据。</p>
     </div>
-    <div class="sim">⚠️ 演示:站点是真实坐标,但步行友好分数是<b>模拟生成</b>(每站用带种子的随机数布点 + 公式算分)。真实版应离线预计算、存为静态文件、按需加载。</div>
+    <div class="sim">⚠️ 演示:除「北京南站」已接入<b>真实数据</b>(OSM 路网+POI+DEM 坡度,离线预计算为静态 JSON)外,其余站点为模拟生成(带种子布点+公式)。这正是「静态预计算、按需加载」架构的落地。</div>
 
     <div class="sec">
       <h2>选择火车站</h2>
@@ -196,6 +196,7 @@ map.on('load',()=>{
   map.on('mouseenter','heat',()=>map.getCanvas().style.cursor='pointer');
   map.on('mouseleave','heat',()=>map.getCanvas().style.cursor='');
   map.on('click',e=>setIso(e.lngLat));
+  selectStation(STATIONS[0]);
 });
 
 function popupHTML(p){
@@ -223,18 +224,28 @@ function renderRank(){
   el.innerHTML=ranked.map(r=>`<div class="row"><span class="nm">${r.name}</span><div class="bar"><i style="width:${r.avg}%;background:${gc(r.avg)}"></i></div><span class="sc">${r.avg}</span></div>`).join('');
 }
 
-// 选择站点
-function selectStation(st){
+// 选择站点：优先加载真实静态数据，缺失则回退模拟
+async function selectStation(st){
   document.querySelectorAll('.st').forEach(e=>e.classList.toggle('active',e.dataset.id===st.id));
-  const {cells,pois}=buildGrid(st);
+  document.getElementById('hint').textContent=`加载 ${st.city} ${st.name} …`;
+  let cells,pois,center=[st.lng,st.lat];
+  try{
+    const r=await fetch(`data/${st.id}.json`,{cache:'no-store'});
+    if(!r.ok) throw 0;
+    const j=await r.json();
+    cells=j.cells; pois=j.pois; center=j.center||center;
+    document.getElementById('hint').textContent=`${st.city} ${st.name} · 真实数据(OSM 路网+POI+DEM 坡度)`;
+  }catch(e){
+    const g=buildGrid(st); cells=g.cells; pois=g.pois;
+    document.getElementById('hint').textContent=`${st.city} ${st.name} · 模拟数据(无静态文件)`;
+  }
   curCells=cells;curPOIs=pois;
   map.getSource('cells').setData(cells);
   map.getSource('pois').setData({type:'FeatureCollection',features:pois.map(p=>({type:'Feature',geometry:{type:'Point',coordinates:[p.lng,p.lat]},properties:p}))});
-  map.getSource('ring').setData({type:'Feature',geometry:{type:'Polygon',coordinates:[circleCoords(st.lng,st.lat,2000)]}});
+  map.getSource('ring').setData({type:'Feature',geometry:{type:'Polygon',coordinates:[circleCoords(center[0],center[1],2000)]}});
   map.getSource('iso').setData({type:'FeatureCollection',features:[]});
   if(originMarker){originMarker.remove();originMarker=null;}
-  map.flyTo({center:[st.lng,st.lat],zoom:14});
-  document.getElementById('hint').textContent=`${st.city} ${st.name} · 站周 2km 步行友好专题(模拟)`;
+  map.flyTo({center:center,zoom:14});
   renderRank();
 }
 
@@ -247,8 +258,6 @@ function renderList(q=''){
 }
 renderList();
 document.getElementById('search').addEventListener('input',e=>renderList(e.target.value));
-// 默认选第一个
-selectStation(STATIONS[0]);
 </script>
 </body>
 </html>
