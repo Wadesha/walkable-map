@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>火车站 2km 步行友好专题 · 演示</title>
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<style>
+  :root{--bg:#f6f7f9;--panel:#fff;--ink:#1f2933;--muted:#62707b;--line:#dce1e6;--brand:#185fa5;--brand-soft:#e6f1fb}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+  #app{display:flex;height:100vh;overflow:hidden}
+  #side{width:360px;min-width:360px;height:100%;overflow-y:auto;background:var(--panel);border-right:1px solid var(--line)}
+  #side .head{padding:16px 16px 10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:5}
+  #side .head h1{font-size:16px;margin:0 0 3px}
+  #side .head p{margin:0;font-size:12px;color:var(--muted);line-height:1.5}
+  .sim{margin:10px 12px 0;padding:7px 10px;border-radius:8px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:11px;line-height:1.5}
+  .sec{padding:12px 16px;border-bottom:1px solid var(--line)}
+  .sec h2{font-size:13px;margin:0 0 8px;color:var(--brand)}
+  .sec p,.sec li{font-size:12.5px;line-height:1.6;color:#37434d}
+  input[type=text]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px}
+  .st-list{margin-top:8px;display:flex;flex-direction:column;gap:4px;max-height:300px;overflow:auto}
+  .st{cursor:pointer;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px}
+  .st:hover{background:var(--brand-soft)}
+  .st.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .st .nm{font-weight:600}
+  .st .ct{color:var(--muted);font-size:11px}
+  .st.active .ct{color:#dbeafe}
+  .note{font-size:11.5px;color:var(--muted);line-height:1.6}
+  code{background:#eef1f4;padding:1px 5px;border-radius:4px;font-size:11px}
+  #map{flex:1;height:100%}
+  .hint{position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:3;background:var(--brand);color:#fff;padding:7px 14px;border-radius:999px;font-size:12.5px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+  .map-note{position:absolute;left:12px;bottom:12px;z-index:3;background:rgba(255,255,255,.92);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:11px;color:var(--muted);max-width:320px;line-height:1.5}
+  .maplibregl-popup-content{font-size:12px}
+  .pop h3{margin:0 0 5px;font-size:13px}
+  .pop .mbar{display:flex;align-items:center;gap:6px;margin:2px 0;font-size:11px}
+  .pop .mbar span{width:52px;color:#62707b}
+  .pop .mbar .track{flex:1;height:7px;background:#eef1f4;border-radius:4px;overflow:hidden}
+  .pop .mbar .track i{display:block;height:100%}
+  .pop .tot{margin-top:5px;font-weight:600}
+  .pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;color:#fff}
+  .rank{display:flex;flex-direction:column;gap:5px}
+  .rank .row{display:flex;align-items:center;gap:8px;font-size:12px}
+  .rank .nm{width:80px}
+  .rank .bar{flex:1;height:8px;background:#eef1f4;border-radius:4px;overflow:hidden}
+  .rank .bar i{display:block;height:100%}
+  .rank .sc{width:32px;text-align:right;font-variant-numeric:tabular-nums}
+  .legend-bar{height:10px;border-radius:6px;background:linear-gradient(90deg,#d73027,#fee08b,#1a9850);margin:4px 0 2px}
+  .legend-scale{display:flex;justify-content:space-between;font-size:10px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="side">
+    <div class="head">
+      <h1>火车站 2km 步行友好专题</h1>
+      <p>对每个有火车站的城市,单独做一片「站周 2 公里」步行友好地图。演示版:真实坐标 + 模拟数据。</p>
+    </div>
+    <div class="sim">⚠️ 演示:站点是真实坐标,但步行友好分数是<b>模拟生成</b>(每站用带种子的随机数布点 + 公式算分)。真实版应离线预计算、存为静态文件、按需加载。</div>
+
+    <div class="sec">
+      <h2>选择火车站</h2>
+      <input type="text" id="search" placeholder="搜索城市 / 站名…" />
+      <div class="st-list" id="stList"></div>
+    </div>
+
+    <div class="sec">
+      <h2>当前站 · 街区排行(3×3)</h2>
+      <div class="rank" id="rank"><span class="note">未选择站点</span></div>
+    </div>
+
+    <div class="sec">
+      <h2>关于「数据写死 / 省资源」</h2>
+      <p class="note">专题是静态的 → <b>离线算一次</b>,把每站 2km 网格存成静态 JSON/瓦片。网页<b>只加载正在看的那个站</b>(约 150–200 格 ≈ 几 KB),所以不管总共有 1 万还是 100 万站,单次访问内存都极小。</p>
+      <p class="note">难点在于「算出来」(OSM 路网 + DEM + POI,离线批处理),不在「写死」。百万级站点 GitHub Pages 放不下,生产应用 <b>PMTiles/矢量瓦片 + 分片存储</b>,网页只加载瓦片即可秒开。</p>
+      <p class="note">演示里为自包含,网格在浏览器按种子即时生成;生产只需把 <code>buildGrid()</code> 换成 <code>fetch('data/'+id+'.json')</code>(预生成的静态文件)。</p>
+    </div>
+
+    <div class="sec">
+      <h2>怎么读</h2>
+      <p class="note">虚线圆 = 站周 2km 研究范围。色块 = 步行友好度(绿好/红差)。点地图任意处生成等时圈;点格子看 5 维明细。底图 © OpenStreetMap © CARTO。</p>
+      <div class="legend-bar"></div>
+      <div class="legend-scale"><span>0 差</span><span>50 中</span><span>100 优</span></div>
+    </div>
+  </aside>
+
+  <main style="position:relative;flex:1">
+    <div id="map"></div>
+    <div class="hint" id="hint">从左侧选择一个火车站</div>
+    <div class="map-note">演示 · 真实坐标 / 模拟数据 · 子站:walkable-map/stations/</div>
+  </main>
+</div>
+
+<script>
+// ---------- 真实坐标的演示站点(各大洲代表) ----------
+const STATIONS = [
+  {id:'tokyo',    city:'东京',     country:'日本',   name:'东京站',       lng:139.7671, lat:35.6812},
+  {id:'london',   city:'伦敦',     country:'英国',   name:'King’s Cross', lng:-0.1233,  lat:51.5320},
+  {id:'paris',    city:'巴黎',     country:'法国',   name:'Gare du Nord', lng:2.3553,   lat:48.8809},
+  {id:'nyc',      city:'纽约',     country:'美国',   name:'Penn Station', lng:-73.9939, lat:40.7506},
+  {id:'beijing',  city:'北京',     country:'中国',   name:'北京南站',     lng:116.3782, lat:39.8714},
+  {id:'shanghai', city:'上海',     country:'中国',   name:'虹桥站',       lng:121.3199, lat:31.1945},
+  {id:'mumbai',   city:'孟买',     country:'印度',   name:'CST',          lng:72.8347,  lat:18.9400},
+  {id:'berlin',   city:'柏林',     country:'德国',   name:'Hauptbahnhof', lng:13.3694,  lat:52.5250},
+  {id:'madrid',   city:'马德里',   country:'西班牙', name:'Atocha',       lng:-3.6896,  lat:40.4066},
+  {id:'moscow',   city:'莫斯科',   country:'俄罗斯', name:'Belorussky',   lng:37.5654,  lat:55.7761},
+  {id:'sydney',   city:'悉尼',     country:'澳大利亚',name:'Central',      lng:151.2060, lat:-33.8842},
+  {id:'saopaulo', city:'圣保罗',   country:'巴西',   name:'Luz',          lng:-46.6340, lat:-23.5385},
+  {id:'cairo',    city:'开罗',     country:'埃及',   name:'Ramses',       lng:31.2480,  lat:30.0580},
+  {id:'toronto',  city:'多伦多',   country:'加拿大', name:'Union',        lng:-79.3804, lat:43.6450}
+];
+const POI_WEIGHT = {park:1.0, metro:1.2, shop:0.9, school:0.7, hospital:0.8};
+const POI_COLOR  = {park:'#16a34a', metro:'#2563eb', shop:'#d97706', school:'#7c3aed', hospital:'#dc2626'};
+
+// ---------- 工具 ----------
+function hav(lng1,lat1,lng2,lat2){
+  const R=6371000,r=Math.PI/180;
+  const dLat=(lat2-lat1)*r,dLng=(lng2-lng1)*r;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*r)*Math.cos(lat2*r)*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(a));
+}
+function noise(x,y){return (Math.sin(x*0.9)+Math.cos(y*1.1)+Math.sin((x+y)*0.6)+Math.cos((x-y)*0.7)+4)/8;}
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function hashStr(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};}
+
+// 每站用种子布点(确定性,各站不同)
+function makePOIs(st){
+  const rnd=mulberry32(hashStr(st.id));
+  const types=['park','metro','shop','school','hospital'];
+  const N=6+Math.floor(rnd()*5);
+  const mLat=111320, mLng=111320*Math.cos(st.lat*Math.PI/180);
+  const out=[];
+  for(let i=0;i<N;i++){
+    const ang=rnd()*2*Math.PI, dist=200+rnd()*1700;
+    const dx=Math.cos(ang)*dist, dy=Math.sin(ang)*dist;
+    const t=types[Math.floor(rnd()*types.length)];
+    out.push({lng:st.lng+dx/mLng, lat:st.lat+dy/mLat, type:t, name:st.city+'·'+t});
+  }
+  return out;
+}
+
+// 每站 2km 网格(演示:浏览器内生成;生产换成静态文件)
+function buildGrid(st){
+  const mLat=111320, mLng=111320*Math.cos(st.lat*Math.PI/180);
+  const CELL_M=160, half=1000, N=Math.ceil((2*half)/CELL_M);
+  const dLat=CELL_M/mLat, dLng=CELL_M/mLng;
+  const pois=makePOIs(st);
+  const feats=[];
+  for(let i=0;i<N;i++)for(let j=0;j<N;j++){
+    const cx=st.lng+(-half+i*CELL_M+CELL_M/2)/mLng;
+    const cy=st.lat+(-half+j*CELL_M+CELL_M/2)/mLat;
+    // 评分(与主页同一套公式)
+    let acc=0; const types=new Set();
+    for(const p of pois){const d=hav(cx,cy,p.lng,p.lat);if(d<1400){acc+=POI_WEIGHT[p.type]*Math.exp(-d/450);if(d<800)types.add(p.type);}}
+    const access=Math.min(100,acc*55), attr=Math.min(100,types.size/5*100);
+    const conn=clamp(20+60*noise(cx*30,cy*30)+10*(1-Math.min(1,hav(cx,cy,st.lng,st.lat)/1500)),0,100);
+    const slopeDeg=2+10*noise(cx*30+5,cy*30+3);
+    let green=0;for(const p of pois){if(p.type==='park'&&hav(cx,cy,p.lng,p.lat)<600){green=15;break;}}
+    const comfort=clamp(90-slopeDeg*4-(1-noise(cx*30+9,cy*30+2))*20+green,0,100);
+    const safety=clamp(95-40*noise(cx*30+2,cy*30+7),0,100);
+    const score=0.30*access+0.18*conn+0.17*comfort+0.15*safety+0.20*attr;
+    const swLng=cx-dLng/2, swLat=cy-dLat/2;
+    feats.push({type:'Feature',geometry:{type:'Polygon',coordinates:[[[swLng,swLat],[swLng+dLng,swLat],[swLng+dLng,swLat+dLat],[swLng,swLat+dLat],[swLng,swLat]]]},
+      properties:{center:[cx,cy],score:Math.round(score),access:Math.round(access),conn:Math.round(conn),comfort:Math.round(comfort),safety:Math.round(safety),attr:Math.round(attr),slope:Math.round(slopeDeg*10)/10}});
+  }
+  return {cells:{type:'FeatureCollection',features:feats}, pois};
+}
+
+// 2km 圆(研究范围)
+function circleCoords(lng,lat,radiusM,steps=72){
+  const coords=[];const dLat=radiusM/111320,dLng=radiusM/(111320*Math.cos(lat*Math.PI/180));
+  for(let i=0;i<=steps;i++){const a=2*Math.PI*i/steps;coords.push([lng+dLng*Math.cos(a),lat+dLat*Math.sin(a)]);}
+  return coords;
+}
+
+// ---------- 地图 ----------
+const map=new maplibregl.Map({container:'map',style:{version:8,sources:{base:{type:'raster',tiles:['https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png','https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png','https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png','https://d.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors © CARTO'}},layers:[{id:'base',type:'raster',source:'base'}]},center:[0,20],zoom:1.4});
+map.addControl(new maplibregl.NavigationControl(),'top-right');
+const state={walkMin:10,maxSlope:8};
+let originMarker=null, curCells=null, curPOIs=null;
+
+map.on('load',()=>{
+  map.addSource('cells',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+  map.addLayer({id:'heat',type:'fill',source:'cells',paint:{'fill-color':['interpolate',['linear'],['get','score'],0,'#d73027',50,'#fee08b',100,'#1a9850'],'fill-opacity':0.62}});
+  map.addSource('iso',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+  map.addLayer({id:'iso-fill',type:'fill',source:'iso',paint:{'fill-color':'#185fa5','fill-opacity':0.30}});
+  map.addLayer({id:'iso-line',type:'line',source:'iso',paint:{'line-color':'#185fa5','line-width':1.4,'line-dasharray':[2,1]}});
+  map.addSource('pois',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+  map.addLayer({id:'poi',type:'circle',source:'pois',paint:{'circle-radius':5,'circle-color':['match',['get','type'],'park',POI_COLOR.park,'metro',POI_COLOR.metro,'shop',POI_COLOR.shop,'school',POI_COLOR.school,'hospital',POI_COLOR.hospital,'#888'],'circle-stroke-color':'#fff','circle-stroke-width':1.5}});
+  map.addSource('ring',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+  map.addLayer({id:'ring',type:'line',source:'ring',paint:{'line-color':'#111827','line-width':1.2,'line-dasharray':[3,2],'line-opacity':0.6}});
+
+  map.on('click','heat',e=>{const f=e.features[0],p=f.properties;new maplibregl.Popup().setLngLat(p.center).setHTML(popupHTML(p)).addTo(map);});
+  map.on('mouseenter','heat',()=>map.getCanvas().style.cursor='pointer');
+  map.on('mouseleave','heat',()=>map.getCanvas().style.cursor='');
+  map.on('click',e=>setIso(e.lngLat));
+});
+
+function popupHTML(p){
+  const bar=(l,v)=>{const c=v>=70?'#1a9850':v>=45?'#eab308':v>=25?'#f97316':'#d73027';return `<div class="mbar"><span>${l}</span><div class="track"><i style="width:${v}%;background:${c}"></i></div></div>`;};
+  const g=s=>s>=80?'优':s>=65?'良':s>=50?'中':s>=35?'较差':'差';
+  const gc=s=>s>=80?'#16a34a':s>=65?'#65a30d':s>=50?'#ca8a04':s>=35?'#ea580c':'#dc2626';
+  return `<div class="pop"><h3>步行友好度 <span class="pill" style="background:${gc(p.score)}">${p.score} · ${g(p.score)}</span></h3>${bar('可达',p.access)}${bar('连通',p.conn)}${bar('舒适',p.comfort)}${bar('安全',p.safety)}${bar('吸引',p.attr)}<div class="tot">综合 ${p.score}/100 ｜ 坡度 ${p.slope}°</div></div>`;
+}
+function setIso(ll){
+  if(!curCells)return;
+  const maxDist=80*state.walkMin;
+  const feats=curCells.features.filter(f=>{const c=f.properties.center;return hav(c[0],c[1],ll.lng,ll.lat)<=maxDist&&f.properties.slope<=state.maxSlope;});
+  map.getSource('iso').setData({type:'FeatureCollection',features:feats});
+  if(originMarker)originMarker.remove();
+  originMarker=new maplibregl.Marker({color:'#185fa5'}).setLngLat([ll.lng,ll.lat]).addTo(map);
+  document.getElementById('hint').textContent=`等时圈:${state.walkMin} 分钟内、坡度≤${state.maxSlope}° 可到达 ${feats.length} 格`;
+}
+function renderRank(){
+  const el=document.getElementById('rank');
+  if(!curCells){el.innerHTML='<span class="note">未选择站点</span>';return;}
+  const N=Math.sqrt(curCells.features.length)|0, g=3, buckets=Array.from({length:g*g},()=>({s:0,n:0}));
+  curCells.features.forEach((f,k)=>{const col=k%N,bj=Math.floor(k/N);const bi=Math.min(g-1,Math.floor(col/(N/g))),bjj=Math.min(g-1,Math.floor(bj/(N/g)));const idx=bjj*g+bi;buckets[idx].s+=f.properties.score;buckets[idx].n++;});
+  const ranked=buckets.map((b,i)=>({name:'街区'+(i+1),avg:Math.round(b.s/b.n)})).sort((a,b)=>b.avg-a.avg);
+  const gc=s=>s>=80?'#16a34a':s>=65?'#65a30d':s>=50?'#ca8a04':s>=35?'#ea580c':'#dc2626';
+  el.innerHTML=ranked.map(r=>`<div class="row"><span class="nm">${r.name}</span><div class="bar"><i style="width:${r.avg}%;background:${gc(r.avg)}"></i></div><span class="sc">${r.avg}</span></div>`).join('');
+}
+
+// 选择站点
+function selectStation(st){
+  document.querySelectorAll('.st').forEach(e=>e.classList.toggle('active',e.dataset.id===st.id));
+  const {cells,pois}=buildGrid(st);
+  curCells=cells;curPOIs=pois;
+  map.getSource('cells').setData(cells);
+  map.getSource('pois').setData({type:'FeatureCollection',features:pois.map(p=>({type:'Feature',geometry:{type:'Point',coordinates:[p.lng,p.lat]},properties:p}))});
+  map.getSource('ring').setData({type:'Feature',geometry:{type:'Polygon',coordinates:[circleCoords(st.lng,st.lat,2000)]}});
+  map.getSource('iso').setData({type:'FeatureCollection',features:[]});
+  if(originMarker){originMarker.remove();originMarker=null;}
+  map.flyTo({center:[st.lng,st.lat],zoom:14});
+  document.getElementById('hint').textContent=`${st.city} ${st.name} · 站周 2km 步行友好专题(模拟)`;
+  renderRank();
+}
+
+// 列表 & 搜索
+const listEl=document.getElementById('stList');
+function renderList(q=''){
+  const f=STATIONS.filter(s=>(s.city+s.name+s.country).includes(q));
+  listEl.innerHTML=f.map(s=>`<div class="st" data-id="${s.id}"><div class="nm">${s.name}</div><div class="ct">${s.city} · ${s.country}</div></div>`).join('');
+  listEl.querySelectorAll('.st').forEach(e=>e.addEventListener('click',()=>selectStation(STATIONS.find(s=>s.id===e.dataset.id))));
+}
+renderList();
+document.getElementById('search').addEventListener('input',e=>renderList(e.target.value));
+// 默认选第一个
+selectStation(STATIONS[0]);
+</script>
+</body>
+</html>
