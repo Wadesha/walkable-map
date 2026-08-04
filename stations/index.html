@@ -66,7 +66,7 @@
     </div>
 
     <div class="sec">
-      <h2>当前站 · 街区排行(3×3)</h2>
+      <h2>步行友好街区 TOP（区域）</h2>
       <div class="rank" id="rank"><span class="note">未选择站点</span></div>
     </div>
 
@@ -78,16 +78,17 @@
     </div>
 
     <div class="sec">
-      <h2>怎么读</h2>
-      <p class="note">虚线圆 = 站周 2km 研究范围。色块 = 步行友好度(绿好/红差)。点地图任意处生成等时圈;点格子看 5 维明细。底图 © OpenStreetMap © CARTO。</p>
+      <h2>怎么读（只标「好不好走」，不画路线）</h2>
+      <p class="note">本专题只标「好不好走」，不画从车站出发的路线或等时圈。三种直接标注：<b>① 区域</b>——色块=步行友好度（绿好红差），最好的街区打「步行友好区」标；<b>② 位置</b>——彩色点=真实 POI（公园/地铁/商店/学校/医院），点开看名称；<b>③ 路线</b>——街道按「好走度」上色（绿好走/红不好走），点开看路型与坡度。底图 © OpenStreetMap © CARTO。</p>
       <div class="legend-bar"></div>
       <div class="legend-scale"><span>0 差</span><span>50 中</span><span>100 优</span></div>
+      <p class="note" style="margin-top:6px">街道好走度图例（绿=好走 → 红=不好走，与上方同色阶）</p>
     </div>
   </aside>
 
   <main style="position:relative;flex:1">
     <div id="map"></div>
-    <div class="hint" id="hint">从左侧选择一个火车站</div>
+    <div class="hint" id="hint">点击色块看 5 维明细 · 点击街道看好走度 · 绿=好走</div>
     <div class="map-note">演示 · 真实坐标 / 模拟数据 · 子站:walkable-map/stations/</div>
   </main>
 </div>
@@ -112,6 +113,7 @@ const STATIONS = [
 ];
 const POI_WEIGHT = {park:1.0, metro:1.2, shop:0.9, school:0.7, hospital:0.8};
 const POI_COLOR  = {park:'#16a34a', metro:'#2563eb', shop:'#d97706', school:'#7c3aed', hospital:'#dc2626'};
+const POI_CN = {park:'公园', metro:'地铁', shop:'商店', school:'学校', hospital:'医院'};
 
 // ---------- 工具 ----------
 function hav(lng1,lat1,lng2,lat2){
@@ -147,8 +149,8 @@ function buildGrid(st){
   const CELL_M=160, half=1000, N=Math.ceil((2*half)/CELL_M);
   const dLat=CELL_M/mLat, dLng=CELL_M/mLng;
   const pois=makePOIs(st);
-  const feats=[];
-  for(let i=0;i<N;i++)for(let j=0;j<N;j++){
+  const grid=[]; const feats=[];
+  for(let i=0;i<N;i++){grid[i]=[];for(let j=0;j<N;j++){
     const cx=st.lng+(-half+i*CELL_M+CELL_M/2)/mLng;
     const cy=st.lat+(-half+j*CELL_M+CELL_M/2)/mLat;
     // 评分(与主页同一套公式)
@@ -161,11 +163,21 @@ function buildGrid(st){
     const comfort=clamp(90-slopeDeg*4-(1-noise(cx*30+9,cy*30+2))*20+green,0,100);
     const safety=clamp(95-40*noise(cx*30+2,cy*30+7),0,100);
     const score=0.30*access+0.18*conn+0.17*comfort+0.15*safety+0.20*attr;
+    grid[i][j]={cx,cy,score:Math.round(score)};
     const swLng=cx-dLng/2, swLat=cy-dLat/2;
     feats.push({type:'Feature',geometry:{type:'Polygon',coordinates:[[[swLng,swLat],[swLng+dLng,swLat],[swLng+dLng,swLat+dLat],[swLng,swLat+dLat],[swLng,swLat]]]},
       properties:{center:[cx,cy],score:Math.round(score),access:Math.round(access),conn:Math.round(conn),comfort:Math.round(comfort),safety:Math.round(safety),attr:Math.round(attr),slope:Math.round(slopeDeg*10)/10}});
+  }}
+  // 模拟街道：网格边界线按该格分数上色（无真实路网时的近似）
+  const rfeats=[]; const edge=(a,b,s)=>rfeats.push({type:'Feature',geometry:{type:'LineString',coordinates:[a,b]},properties:{hw:'模拟街道',walk:s,slope:0}});
+  for(let i=0;i<N;i++)for(let j=0;j<N;j++){
+    const g=grid[i][j], c=g.cx, r=g.cy;
+    const L=[c-dLng/2,r-dLat/2],R=[c+dLng/2,r-dLat/2],T=[c+dLng/2,r+dLat/2],U=[c-dLng/2,r+dLat/2];
+    edge(L,R,g.score); edge(L,U,g.score);
+    if(i===N-1) edge(R,T,g.score);
+    if(j===N-1) edge(U,T,g.score);
   }
-  return {cells:{type:'FeatureCollection',features:feats}, pois};
+  return {cells:{type:'FeatureCollection',features:feats}, pois, roads:{type:'FeatureCollection',features:rfeats}};
 }
 
 // 2km 圆(研究范围)
@@ -174,6 +186,15 @@ function circleCoords(lng,lat,radiusM,steps=72){
   for(let i=0;i<=steps;i++){const a=2*Math.PI*i/steps;coords.push([lng+dLng*Math.cos(a),lat+dLat*Math.sin(a)]);}
   return coords;
 }
+// 真实数据缺 roads 时的回退：从色块边界生成近似街道
+function buildRoadsFromCells(cells){
+  const feats=[];
+  for(const f of cells.features){
+    const c=f.geometry.coordinates[0], s=f.properties.score;
+    for(let k=0;k<4;k++) feats.push({type:'Feature',geometry:{type:'LineString',coordinates:[c[k],c[k+1]]},properties:{hw:'模拟街道',walk:s,slope:0}});
+  }
+  return {type:'FeatureCollection',features:feats};
+}
 
 // ---------- 地图 ----------
 const map=new maplibregl.Map({container:'map',style:{version:8,sources:{base:{type:'raster',tiles:['https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png','https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png','https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png','https://d.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors © CARTO'}},layers:[{id:'bg',type:'background',paint:{'background-color':'#eef2f5'}},{id:'base',type:'raster',source:'base'}]},center:[0,20],zoom:1.4});
@@ -181,17 +202,16 @@ map.addControl(new maplibregl.NavigationControl(),'top-right');
 // 底图瓦片(© CARTO)在国内网络可能受限；失败时给一次性提示，不影响数据叠加
 let tileNoteShown=false;
 map.on('error',e=>{const s=(e&&e.error&&e.error.message)||'';if(!tileNoteShown&&/base|tile|Failed to load|HTTP/i.test(s)){tileNoteShown=true;const note=document.querySelector('.map-note');if(note){note.textContent='提示:底图瓦片(© CARTO)在国内网络可能加载受限,步行友好数据仍准确叠加显示。';}}});
-const state={walkMin:10,maxSlope:8};
-let originMarker=null, curCells=null, curPOIs=null;
+let originMarker=null, curCells=null, curPOIs=null, curRoads=null, areaMarkers=[];
 
 let setupDone=false;
 function setupMap(){
   if(setupDone) return; setupDone=true;
   map.addSource('cells',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
-  map.addLayer({id:'heat',type:'fill',source:'cells',paint:{'fill-color':['interpolate',['linear'],['get','score'],0,'#d73027',50,'#fee08b',100,'#1a9850'],'fill-opacity':0.62}});
-  map.addSource('iso',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
-  map.addLayer({id:'iso-fill',type:'fill',source:'iso',paint:{'fill-color':'#185fa5','fill-opacity':0.30}});
-  map.addLayer({id:'iso-line',type:'line',source:'iso',paint:{'line-color':'#185fa5','line-width':1.4,'line-dasharray':[2,1]}});
+  map.addLayer({id:'heat',type:'fill',source:'cells',paint:{'fill-color':['interpolate',['linear'],['get','score'],0,'#d73027',50,'#fee08b',100,'#1a9850'],'fill-opacity':0.50}});
+  // 街道好走度（真实路网 / 模拟路网），叠在色块之上：绿=好走 红=不好走
+  map.addSource('roads',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+  map.addLayer({id:'roads',type:'line',source:'roads',paint:{'line-color':['interpolate',['linear'],['get','walk'],0,'#d73027',50,'#fee08b',100,'#1a9850'],'line-width':2.4,'line-opacity':0.92}});
   map.addSource('pois',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
   map.addLayer({id:'poi',type:'circle',source:'pois',paint:{'circle-radius':5,'circle-color':['match',['get','type'],'park',POI_COLOR.park,'metro',POI_COLOR.metro,'shop',POI_COLOR.shop,'school',POI_COLOR.school,'hospital',POI_COLOR.hospital,'#888'],'circle-stroke-color':'#fff','circle-stroke-width':1.5}});
   map.addSource('ring',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
@@ -199,7 +219,12 @@ function setupMap(){
   map.on('click','heat',e=>{const f=e.features[0],p=f.properties;new maplibregl.Popup().setLngLat(p.center).setHTML(popupHTML(p)).addTo(map);});
   map.on('mouseenter','heat',()=>map.getCanvas().style.cursor='pointer');
   map.on('mouseleave','heat',()=>map.getCanvas().style.cursor='');
-  map.on('click',e=>setIso(e.lngLat));
+  map.on('click','roads',e=>{const p=e.features[0].properties;new maplibregl.Popup().setLngLat(e.lngLat).setHTML(roadHTML(p)).addTo(map);});
+  map.on('mouseenter','roads',()=>map.getCanvas().style.cursor='pointer');
+  map.on('mouseleave','roads',()=>map.getCanvas().style.cursor='');
+  map.on('click','poi',e=>{const p=e.features[0].properties;new maplibregl.Popup().setLngLat(e.lngLat).setHTML(`<div class="pop"><h3>${p.name}</h3><div class="tot">类型:${POI_CN[p.type]||p.type}</div></div>`).addTo(map);});
+  map.on('mouseenter','poi',()=>map.getCanvas().style.cursor='pointer');
+  map.on('mouseleave','poi',()=>map.getCanvas().style.cursor='');
 }
 // 样式就绪即初始化，不等底图瓦片（国内网络拉 CARTO 可能很慢/被墙，导致 load 迟迟不触发）
 map.on('styledata', setupMap);
@@ -211,14 +236,11 @@ function popupHTML(p){
   const gc=s=>s>=80?'#16a34a':s>=65?'#65a30d':s>=50?'#ca8a04':s>=35?'#ea580c':'#dc2626';
   return `<div class="pop"><h3>步行友好度 <span class="pill" style="background:${gc(p.score)}">${p.score} · ${g(p.score)}</span></h3>${bar('可达',p.access)}${bar('连通',p.conn)}${bar('舒适',p.comfort)}${bar('安全',p.safety)}${bar('吸引',p.attr)}<div class="tot">综合 ${p.score}/100 ｜ 坡度 ${p.slope}°</div></div>`;
 }
-function setIso(ll){
-  if(!curCells)return;
-  const maxDist=80*state.walkMin;
-  const feats=curCells.features.filter(f=>{const c=f.properties.center;return hav(c[0],c[1],ll.lng,ll.lat)<=maxDist&&f.properties.slope<=state.maxSlope;});
-  map.getSource('iso').setData({type:'FeatureCollection',features:feats});
-  if(originMarker)originMarker.remove();
-  originMarker=new maplibregl.Marker({color:'#185fa5'}).setLngLat([ll.lng,ll.lat]).addTo(map);
-  document.getElementById('hint').textContent=`等时圈:${state.walkMin} 分钟内、坡度≤${state.maxSlope}° 可到达 ${feats.length} 格`;
+function roadHTML(p){
+  const g=s=>s>=70?'好走':s>=50?'一般':s>=35?'较差':'不好走';
+  const gc=s=>s>=70?'#1a9850':s>=50?'#eab308':s>=35?'#f97316':'#d73027';
+  const hwcn={'footway':'人行步道','path':'小径','pedestrian':'步行街','living_street':'生活性街道','residential':'居住区道路','service':'服务道路','unclassified':'未分类道路','tertiary':'三级路','tertiary_link':'三级连接路','secondary':'二级路','secondary_link':'二级连接路','primary':'主干道','primary_link':'主干连接路','trunk':'快速路','trunk_link':'快速连接路'};
+  return `<div class="pop"><h3>街道好走度 <span class="pill" style="background:${gc(p.walk)}">${p.walk} · ${g(p.walk)}</span></h3><div class="tot">路型:${hwcn[p.hw]||p.hw} ｜ 坡度 ${p.slope}°</div></div>`;
 }
 function renderRank(){
   const el=document.getElementById('rank');
@@ -245,27 +267,31 @@ async function selectStation(st){
   document.querySelectorAll('.st').forEach(e=>e.classList.toggle('active',e.dataset.id===st.id));
   const hint=document.getElementById('hint');
   hint.textContent=`加载 ${st.city} ${st.name} …`;
-  let cells,pois,center=[st.lng,st.lat];
+  let cells,pois,roads,center=[st.lng,st.lat];
   try{
     const r=await fetch(`data/${st.id}.json`,{cache:'no-store'});
     if(!r.ok) throw 0;
     const j=await r.json();
-    cells=j.cells; pois=j.pois; center=j.center||center;
+    cells=j.cells; pois=j.pois; roads=j.roads; center=j.center||center;
     hint.textContent=`${st.city} ${st.name} · 真实数据(OSM 路网+POI+DEM 坡度)`;
   }catch(e){
-    const g=buildGrid(st); cells=g.cells; pois=g.pois;
+    const g=buildGrid(st); cells=g.cells; pois=g.pois; roads=g.roads;
     hint.textContent=`${st.city} ${st.name} · 模拟数据(无静态文件)`;
   }
-  curCells=cells; curPOIs=pois;
+  curCells=cells; curPOIs=pois; curRoads=roads||buildRoadsFromCells(cells);
   // 轮询直到地图图层就绪（不等 load / 底图瓦片），再应用数据
   const apply=()=>{
     if(!map.getSource('cells')){ setTimeout(apply, 300); return; }
     try{
       map.getSource('cells').setData(cells);
+      map.getSource('roads').setData(curRoads);
       map.getSource('pois').setData({type:'FeatureCollection',features:pois.map(p=>({type:'Feature',geometry:{type:'Point',coordinates:[p.lng,p.lat]},properties:p}))});
       map.getSource('ring').setData({type:'Feature',geometry:{type:'Polygon',coordinates:[circleCoords(center[0],center[1],2000)]}});
-      map.getSource('iso').setData({type:'FeatureCollection',features:[]});
       if(originMarker){originMarker.remove();originMarker=null;}
+      areaMarkers.forEach(m=>m.remove()); areaMarkers=[];
+      // 最好的若干街区直接打「步行友好区」标（HTML marker，无需字体）
+      const top=[...cells.features].sort((a,b)=>b.properties.score-a.properties.score).slice(0,5);
+      top.forEach(f=>{const c=f.properties.center;const el=document.createElement('div');el.textContent='步行友好区';el.style.cssText='background:#16a34a;color:#fff;font-size:10px;padding:1px 6px;border-radius:6px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.25)';const mk=new maplibregl.Marker({element:el}).setLngLat(c).addTo(map);areaMarkers.push(mk);});
       map.flyTo({center:center,zoom:14});
       renderRank();
     }catch(err){ showError('应用地图数据失败: '+(err&&err.message||err)); }
