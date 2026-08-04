@@ -181,7 +181,9 @@ map.addControl(new maplibregl.NavigationControl(),'top-right');
 const state={walkMin:10,maxSlope:8};
 let originMarker=null, curCells=null, curPOIs=null;
 
-map.on('load',()=>{
+let setupDone=false;
+function setupMap(){
+  if(setupDone) return; setupDone=true;
   map.addSource('cells',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
   map.addLayer({id:'heat',type:'fill',source:'cells',paint:{'fill-color':['interpolate',['linear'],['get','score'],0,'#d73027',50,'#fee08b',100,'#1a9850'],'fill-opacity':0.62}});
   map.addSource('iso',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
@@ -191,12 +193,14 @@ map.on('load',()=>{
   map.addLayer({id:'poi',type:'circle',source:'pois',paint:{'circle-radius':5,'circle-color':['match',['get','type'],'park',POI_COLOR.park,'metro',POI_COLOR.metro,'shop',POI_COLOR.shop,'school',POI_COLOR.school,'hospital',POI_COLOR.hospital,'#888'],'circle-stroke-color':'#fff','circle-stroke-width':1.5}});
   map.addSource('ring',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
   map.addLayer({id:'ring',type:'line',source:'ring',paint:{'line-color':'#111827','line-width':1.2,'line-dasharray':[3,2],'line-opacity':0.6}});
-
   map.on('click','heat',e=>{const f=e.features[0],p=f.properties;new maplibregl.Popup().setLngLat(p.center).setHTML(popupHTML(p)).addTo(map);});
   map.on('mouseenter','heat',()=>map.getCanvas().style.cursor='pointer');
   map.on('mouseleave','heat',()=>map.getCanvas().style.cursor='');
   map.on('click',e=>setIso(e.lngLat));
-});
+}
+// 样式就绪即初始化，不等底图瓦片（国内网络拉 CARTO 可能很慢/被墙，导致 load 迟迟不触发）
+map.on('styledata', setupMap);
+setTimeout(()=>{ if(!setupDone) setupMap(); }, 1200);
 
 function popupHTML(p){
   const bar=(l,v)=>{const c=v>=70?'#1a9850':v>=45?'#eab308':v>=25?'#f97316':'#d73027';return `<div class="mbar"><span>${l}</span><div class="track"><i style="width:${v}%;background:${c}"></i></div></div>`;};
@@ -250,8 +254,9 @@ async function selectStation(st){
     hint.textContent=`${st.city} ${st.name} · 模拟数据(无静态文件)`;
   }
   curCells=cells; curPOIs=pois;
-  // 等地图图层就绪再应用，避免 load 事件晚于点击导致 getSource 为 undefined
+  // 轮询直到地图图层就绪（不等 load / 底图瓦片），再应用数据
   const apply=()=>{
+    if(!map.getSource('cells')){ setTimeout(apply, 300); return; }
     try{
       map.getSource('cells').setData(cells);
       map.getSource('pois').setData({type:'FeatureCollection',features:pois.map(p=>({type:'Feature',geometry:{type:'Point',coordinates:[p.lng,p.lat]},properties:p}))});
@@ -262,8 +267,7 @@ async function selectStation(st){
       renderRank();
     }catch(err){ showError('应用地图数据失败: '+(err&&err.message||err)); }
   };
-  if(map.getSource('cells')) apply();
-  else map.once('load', apply);
+  apply();
 }
 
 // 列表 & 搜索
@@ -275,9 +279,8 @@ function renderList(q=''){
 }
 renderList();
 document.getElementById('search').addEventListener('input',e=>renderList(e.target.value));
-// 初始选中第一个站（等地图就绪后应用）
-if(map.loaded()) selectStation(STATIONS[0]);
-else map.once('load',()=>selectStation(STATIONS[0]));
+// 初始选中第一个站（apply 会轮询等待地图图层就绪）
+selectStation(STATIONS[0]);
 </script>
 </body>
 </html>
