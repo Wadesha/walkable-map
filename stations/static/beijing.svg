@@ -5702,6 +5702,10 @@
 <path d="M558.6,702.7 L558.6,676.6M558.6,676.6 L532.5,676.6M532.5,676.6 L532.5,702.7M532.5,728.8 L558.6,728.8M558.6,728.8 L558.6,702.7M532.5,702.7 L532.5,728.8" fill="none" stroke="#0f7a3d" stroke-width="3.2" stroke-opacity="0.95" stroke-linejoin="round"/>
 <text x="555.6" y="692.7" font-size="12.5" font-weight="700" fill="#0f7a3d" stroke="#ffffff" stroke-width="3.2" paint-order="stroke">友好区·2格</text>
 </g>
+<g>
+<circle cx="617.3" cy="565.8" r="5.5" fill="#111827" stroke="#ffffff" stroke-width="2"/>
+<text x="626.3" y="569.8" font-size="14" font-weight="700" fill="#111827" stroke="#ffffff" stroke-width="3.4" paint-order="stroke">★ 北京南站</text>
+</g>
 <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="rgb(215,48,39)"/><stop offset="25%" stop-color="rgb(234,136,89)"/><stop offset="50%" stop-color="rgb(254,224,139)"/><stop offset="75%" stop-color="rgb(140,188,110)"/><stop offset="100%" stop-color="rgb(26,152,80)"/></linearGradient></defs>
 <rect x="440.0" y="1164" width="320" height="16" fill="url(#g)" stroke="#d1d5db" stroke-width="1"/>
 <text x="440.0" y="1196" text-anchor="start" font-size="12" fill="#374151">0 差</text>
