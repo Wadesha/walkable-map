@@ -5713,11 +5713,9 @@
 <text x="624.8" y="339.4">虎坊路</text>
 <text x="699.6" y="422.9">南纬路</text>
 <text x="344.1" y="823.6">右安门外大街</text>
-<text x="540.5" y="712.4">▴北京南</text>
-<text x="527.3" y="703.6">▴永和豆浆</text>
-<text x="597.4" y="703.1">▴网约车停车处</text>
-<text x="598.1" y="728.3">▴北京市第十二中学（南站校区）</text>
-<text x="496.9" y="712.5">▴网约车停车处</text>
+<text x="651.6" y="746.5">▴HongYunLou Restaurant</text>
+<text x="475.0" y="651.0">▴物美</text>
+<text x="613.6" y="738.2">▴北京市公安局丰台分局洋桥派出所</text>
 </g>
 <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="rgb(215,48,39)"/><stop offset="25%" stop-color="rgb(234,136,89)"/><stop offset="50%" stop-color="rgb(254,224,139)"/><stop offset="75%" stop-color="rgb(140,188,110)"/><stop offset="100%" stop-color="rgb(26,152,80)"/></linearGradient></defs>
 <rect x="440.0" y="1164" width="320" height="16" fill="url(#g)" stroke="#d1d5db" stroke-width="1"/>
